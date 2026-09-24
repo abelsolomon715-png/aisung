@@ -1,445 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GlobalMix AI - Studio Dashboard</title>
-    <style>
-        :root {
-            --bg-color: #0b0f19;
-            --card-bg: #131b2e;
-            --accent-purple: #8b5cf6;
-            --accent-pink: #ec4899;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #1e293b;
+async function triggerGeneration() {
+    let selectedChips = document.querySelectorAll('.instrument-chip.selected');
+    let status = document.getElementById('status-msg');
+    
+    if (selectedChips.length === 0) {
+        status.innerText = "⚠️ Please select at least one instrument or genre element!";
+        status.style.color = "#ec4899";
+        return;
+    }
+
+    let names = [];
+    selectedChips.forEach(c => names.push(c.innerText));
+    let customPrompt = "A professional studio track featuring: " + names.join(', ');
+
+    status.innerText = "Submitting track to Apiframe Neural Engine...";
+    status.style.color = "#c4b5fd";
+
+    try {
+        let response = await fetch('/api/generate-track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: customPrompt })
+        });
+
+        let data = await response.json();
+        
+        if (data.jobId) {
+            status.innerText = "Job queued! Processing audio (this takes about 30 seconds)...";
+            pollJobStatus(data.jobId);
+        } else {
+            status.innerText = "Error: " + (data.error || "Failed to start generation.");
+            status.style.color = "#ec4899";
         }
+    } catch (err) {
+        status.innerText = "Network error connecting to generation backend.";
+        status.style.color = "#ec4899";
+    }
+}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding: 16px;
-            padding-bottom: 40px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .brand-area {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo-badge {
-            width: 42px;
-            height: 42px;
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        .brand-title h1 {
-            font-size: 17px;
-            font-weight: 700;
-        }
-
-        .brand-title p {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .action-badges {
-            display: flex;
-            gap: 6px;
-        }
-
-        .badge-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 6px 10px;
-            border-radius: 18px;
-            font-size: 11px;
-            cursor: pointer;
-        }
-
-        .badge-btn.credits {
-            border-color: rgba(139, 92, 246, 0.4);
-            color: #c4b5fd;
-        }
-
-        .catalog-container {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 14px;
-            margin-bottom: 16px;
-        }
-
-        .catalog-header h2 {
-            font-size: 15px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .catalog-header p {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-        }
-
-        .search-box {
-            position: relative;
-            margin-bottom: 14px;
-        }
-
-        .search-box input {
-            width: 100%;
-            background-color: var(--bg-color);
-            border: 1px solid var(--border-color);
-            padding: 10px 14px 10px 36px;
-            border-radius: 10px;
-            color: var(--text-main);
-            font-size: 13px;
-            outline: none;
-        }
-
-        .search-box input:focus {
-            border-color: var(--accent-purple);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 13px;
-        }
-
-        .genre-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .genre-card {
-            background-color: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            overflow: hidden;
-            transition: border-color 0.2s;
-        }
-
-        .genre-header {
-            padding: 12px 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .genre-header:hover {
-            border-color: var(--accent-purple);
-        }
-
-        .genre-name {
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .genre-arrow {
-            color: var(--text-muted);
-            font-size: 11px;
-            transition: transform 0.2s;
-        }
-
-        .genre-card.active .genre-arrow {
-            transform: rotate(180deg);
-            color: var(--accent-purple);
-        }
-
-        .instrument-options {
-            display: none;
-            padding: 0 14px 12px 14px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            border-top: 1px solid var(--border-color);
-            background: rgba(15, 23, 42, 0.5);
-            padding-top: 10px;
-        }
-
-        .genre-card:not(.open) .instrument-options {
-            display: none;
-        }
-
-        .instrument-chip {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            padding: 5px 10px;
-            border-radius: 8px;
-            font-size: 11px;
-            cursor: pointer;
-        }
-
-        .instrument-chip.selected {
-            background: rgba(139, 92, 246, 0.2);
-            border-color: var(--accent-purple);
-            color: #c4b5fd;
-        }
-
-        .selection-summary {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            font-size: 12px;
-        }
-
-        .selection-summary span {
-            color: #c4b5fd;
-            font-weight: 600;
-        }
-
-        .generate-btn {
-            width: 100%;
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
-        }
-
-        #status-msg {
-            margin-top: 12px;
-            font-size: 12px;
-            text-align: center;
-            color: var(--text-muted);
-        }
-    </style>
-</head>
-<body>
-
-    <div class="header">
-        <div class="brand-area">
-            <div class="logo-badge">🎵</div>
-            <div class="brand-title">
-                <h1>GlobalMix AI</h1>
-                <p>Studio Dashboard</p>
-            </div>
-        </div>
-        <div class="action-badges">
-            <button class="badge-btn credits">✦ Credits: 15</button>
-            <button class="badge-btn" onclick="resetStudio()">Reset</button>
-        </div>
-    </div>
-
-    <div class="catalog-container">
-        <div class="catalog-header">
-            <h2>Studio Catalog</h2>
-            <p>Tap genres to expand and pick your instruments, rhythm, and tempo.</p>
-        </div>
-
-        <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Search genres or instruments..." onkeyup="filterCatalog()">
-        </div>
-
-        <div class="genre-list" id="genreList">
+async function pollJobStatus(jobId) {
+    let status = document.getElementById('status-msg');
+    
+    let interval = setInterval(async () => {
+        try {
+            let res = await fetch(`/api/job-status/${jobId}`);
+            let data = await res.json();
             
-            <!-- Rock & Alternative -->
-            <div class="genre-card" id="card-rock">
-                <div class="genre-header" onclick="toggleGenre('rock')">
-                    <span class="genre-name">🎸 Rock & Alternative</span>
-                    <span class="genre-arrow">▼</span>
-                </div>
-                <div class="instrument-options">
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Electric Lead Guitar</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Heavy Bassline</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Acoustic Rhythm</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Rock Drum Kit</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Synthesizer Pad</div>
-                </div>
-            </div>
-
-            <!-- R&B & Soul -->
-            <div class="genre-card" id="card-rnb">
-                <div class="genre-header" onclick="toggleGenre('rnb')">
-                    <span class="genre-name">🎤 R&B & Soul</span>
-                    <span class="genre-arrow">▼</span>
-                </div>
-                <div class="instrument-options">
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Smooth Rhodes Piano</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Neo-Soul Chords</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Vocal Harmonies</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Sub Bass</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Lo-Fi Snare Beat</div>
-                </div>
-            </div>
-
-            <!-- Reggae -->
-            <div class="genre-card" id="card-reggae">
-                <div class="genre-header" onclick="toggleGenre('reggae')">
-                    <span class="genre-name">🌴 Reggae</span>
-                    <span class="genre-arrow">▼</span>
-                </div>
-                <div class="instrument-options">
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Offbeat Reggae Guitar</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Deep Dub Bass</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Hammond Organ</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">One-Drop Drums</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Percussion Congas</div>
-                </div>
-            </div>
-
-            <!-- Dancehall & Caribbean -->
-            <div class="genre-card" id="card-dancehall">
-                <div class="genre-header" onclick="toggleGenre('dancehall')">
-                    <span class="genre-name">🪘 Dancehall & Caribbean</span>
-                    <span class="genre-arrow">▼</span>
-                </div>
-                <div class="instrument-options">
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Bounce Rhythm Synth</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Dancehall Rimshot</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Steel Pan Melodies</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Heavy 808 Bass</div>
-                </div>
-            </div>
-
-            <!-- Pop & Commercial -->
-            <div class="genre-card" id="card-pop">
-                <div class="genre-header" onclick="toggleGenre('pop')">
-                    <span class="genre-name">⭐ Pop & Commercial</span>
-                    <span class="genre-arrow">▼</span>
-                </div>
-                <div class="instrument-options">
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Upbeat Synth Lead</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Punchy Pop Drums</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Bright Acoustic Plucks</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Catchy Piano Chords</div>
-                </div>
-            </div>
-
-            <!-- Electronic & Dance -->
-            <div class="genre-card" id="card-electronic">
-                <div class="genre-header" onclick="toggleGenre('electronic')">
-                    <span class="genre-name">🎧 Electronic & Dance</span>
-                    <span class="genre-arrow">▼</span>
-                </div>
-                <div class="instrument-options">
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">EDM Super Saw</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Punchy Kick & Bass</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Arpeggiated Synth</div>
-                    <div class="instrument-chip" onclick="toggleInstrument(this)">Ambient Pad Effect</div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <div class="selection-summary">
-        Active Selections: <span id="summaryText">None selected. Tap categories above to pick instruments.</span>
-    </div>
-
-    <div class="generate-section">
-        <button class="generate-btn" onclick="triggerGeneration()">Generate AI Mix Track</button>
-        <div id="status-msg"></div>
-    </div>
-
-    <script>
-        function toggleGenre(id) {
-            let card = document.getElementById('card-' + id);
-            card.classList.toggle('open');
-            card.classList.toggle('active');
-        }
-
-        function toggleInstrument(chip) {
-            chip.classList.toggle('selected');
-            updateSummary();
-        }
-
-        function updateSummary() {
-            let selectedChips = document.querySelectorAll('.instrument-chip.selected');
-            let summaryText = document.getElementById('summaryText');
-            
-            if (selectedChips.length === 0) {
-                summaryText.innerText = "None selected. Tap categories above to pick instruments.";
-            } else {
-                let names = [];
-                selectedChips.forEach(c => names.push(c.innerText));
-                summaryText.innerText = names.join(', ');
-            }
-        }
-
-        function filterCatalog() {
-            let query = document.getElementById('searchInput').value.toLowerCase();
-            let cards = document.getElementsByClassName('genre-card');
-            
-            for (let i = 0; i < cards.length; i++) {
-                let text = cards[i].innerText.toLowerCase();
-                if (text.includes(query)) {
-                    cards[i].style.display = "block";
-                } else {
-                    cards[i].style.display = "none";
-                }
-            }
-        }
-
-        function triggerGeneration() {
-            let selectedChips = document.querySelectorAll('.instrument-chip.selected');
-            let status = document.getElementById('status-msg');
-            
-            if (selectedChips.length === 0) {
-                status.innerText = "⚠️ Please select at least one instrument/genre element to generate a mix!";
+            if (data.status === 'COMPLETED' && data.result) {
+                clearInterval(interval);
+                status.innerHTML = `✅ Track generated successfully! <br><a href="${data.result.audio_url || data.result}" target="_blank" style="color:#34d399; font-weight:bold;">Download / Play Audio 🎵</a>`;
+            } else if (data.status === 'FAILED') {
+                clearInterval(interval);
+                status.innerText = "❌ Generation failed on the server model.";
                 status.style.color = "#ec4899";
-                return;
             }
-
-            status.innerText = "Connecting to AISUNG Neural Engine & Synthesizing Track...";
-            status.style.color = "#c4b5fd";
-            
-            setTimeout(() => {
-                status.innerText = "Success! Your custom AI track mix has been generated and queued!";
-                status.style.color = "#34d399";
-            }, 2000);
+        } catch (e) {
+            console.error(e);
         }
-
-        function resetStudio() {
-            document.querySelectorAll('.instrument-chip').forEach(c => c.classList.remove('selected'));
-            document.querySelectorAll('.genre-card').forEach(c => {
-                c.classList.remove('open', 'active');
-                c.style.display = "block";
-            });
-            document.getElementById('searchInput').value = "";
-            updateSummary();
-            document.getElementById('status-msg').innerText = "Studio reset successfully.";
-            document.getElementById('status-msg').style.color = "var(--text-muted)";
-        }
-    </script>
-</body>
-</html>
+    }, 5000);
+}
