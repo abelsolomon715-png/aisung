@@ -60,6 +60,7 @@
             margin-top: 16px;
             font-weight: 500;
             text-align: center;
+            word-break: break-all;
         }
     </style>
 </head>
@@ -134,7 +135,15 @@
                     
                     if (data.status === 'COMPLETED' && data.result) {
                         clearInterval(interval);
-                        status.innerHTML = `✅ Track generated successfully!<br><a href="${data.result.audio_url || data.result}" target="_blank" style="color: #34d399; font-weight:bold;">Download / Play Audio 🎵</a>`;
+                        
+                        // Extract audio URL safely from various possible response formats
+                        let audioUrl = data.result.audio_url || data.result.url || data.result;
+                        if (typeof audioUrl === 'object') {
+                            audioUrl = audioUrl.url || audioUrl.link || JSON.stringify(audioUrl);
+                        }
+
+                        status.innerHTML = `✅ Track generated successfully!<br><br>` +
+                            `<a href="${audioUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="color: #34d399; font-weight:bold; font-size: 1.1rem; text-decoration: underline;">📥 Open / Download Audio File 🎵</a>`;
                     } else if (data.status === 'FAILED') {
                         clearInterval(interval);
                         status.innerText = "❌ Generation failed on the server model.";
