@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlobalMix AI - Studio Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #131b2e;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-badge {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .brand-title h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-title p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .action-badges {
+            display: flex;
+            gap: 8px;
+        }
+
+        .badge-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .badge-btn.credits {
+            border-color: rgba(139, 92, 246, 0.4);
+            color: #c4b5fd;
+        }
+
+        .catalog-container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .catalog-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .catalog-header p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            padding: 12px 16px 12px 40px;
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-purple);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .genre-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .genre-item {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            padding: 14px 16px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .genre-item:hover {
+            border-color: var(--accent-purple);
+        }
+
+        .genre-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .genre-arrow {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .generate-section {
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+        }
+
+        .generate-btn:active {
+            opacity: 0.9;
+        }
+
+        #status-msg {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="brand-area">
+            <div class="logo-badge">🎵</div>
+            <div class="brand-title">
+                <h1>GlobalMix AI</h1>
+                <p>Studio Dashboard</p>
+            </div>
+        </div>
+        <div class="action-badges">
+            <button class="badge-btn credits">✦ Credits: 10</button>
+            <button class="badge-btn" onclick="resetStudio()">Reset</button>
+        </div>
+    </div>
+
+    <div class="catalog-container">
+        <div class="catalog-header">
+            <h2>Studio Catalog</h2>
+            <p>Search and pick across genres, instruments, and tempo to build your mix.</p>
+        </div>
+
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search genres, instruments, tempo..." onkeyup="filterGenres()">
+        </div>
+
+        <div class="genre-list" id="genreList">
+            <div class="genre-item" onclick="selectGenre('Rock & Alternative')">
+                <span class="genre-name">🎸 Rock & Alternative</span>
+                <span class="genre-arrow">▼</span>
+            </div>
+            <div class="genre-item" onclick="selectGenre('R&B & Soul')">
+                <span class="genre-name">🎤 R&B & Soul</span>
+                <span class="genre-arrow">▼</span>
+            </div>
+            <div class="genre-item" onclick="selectGenre('Reggae')">
+                <span class="genre-name">🌴 Reggae</span>
+                <span class="genre-arrow">▼</span>
+            </div>
+            <div class="genre-item" onclick="selectGenre('Dancehall & Caribbean')">
+                <span class="genre-name">🪘 Dancehall & Caribbean</span>
+                <span class="genre-arrow">▼</span>
+            </div>
+            <div class="genre-item" onclick="selectGenre('Pop & Commercial')">
+                <span class="genre-name">⭐ Pop & Commercial</span>
+                <span class="genre-arrow">▼</span>
+            </div>
+            <div class="genre-item" onclick="selectGenre('Electronic & Dance')">
+                <span class="genre-name">🎧 Electronic & Dance</span>
+                <span class="genre-arrow">▼</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="generate-section">
+        <button class="generate-btn" onclick="triggerGeneration()">Generate AI Mix Track</button>
+        <div id="status-msg"></div>
+    </div>
+
+    <script>
+        function selectGenre(genre) {
+            document.getElementById('status-msg').innerText = "Selected Genre: " + genre;
+            document.getElementById('status-msg').style.color = "#c4b5fd";
+        }
+
+        function filterGenres() {
+            let input = document.getElementById('searchInput').value.toLowerCase();
+            let items = document.getElementsByClassName('genre-item');
+            
+            for (let i = 0; i < items.length; i++) {
+                let text = items[i].innerText.toLowerCase();
+                if (text.includes(input)) {
+                    items[i].style.display = "flex";
+                } else {
+                    items[i].style.display = "none";
+                }
+            }
+        }
+
+        function triggerGeneration() {
+            const status = document.getElementById('status-msg');
+            status.innerText = "Connecting to AISUNG Engine & Synthesizing Track...";
+            status.style.color = "#ec4899";
+            
+            setTimeout(() => {
+                status.innerText = "Success! Track generated successfully.";
+                status.style.color = "#34d399";
+            }, 2000);
+        }
+
+        function resetStudio() {
+            document.getElementById('searchInput').value = "";
+            filterGenres();
+            document.getElementById('status-msg').innerText = "Studio reset.";
+            document.getElementById('status-msg').style.color = "var(--text-muted)";
+        }
+    </script>
+</body>
+</html>
