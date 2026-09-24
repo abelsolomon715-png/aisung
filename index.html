@@ -1,60 +1,150 @@
-async function triggerGeneration() {
-    let selectedChips = document.querySelectorAll('.instrument-chip.selected');
-    let status = document.getElementById('status-msg');
-    
-    if (selectedChips.length === 0) {
-        status.innerText = "⚠️ Please select at least one instrument or genre element!";
-        status.style.color = "#ec4899";
-        return;
-    }
-
-    let names = [];
-    selectedChips.forEach(c => names.push(c.innerText));
-    let customPrompt = "A professional studio track featuring: " + names.join(', ');
-
-    status.innerText = "Submitting track to Apiframe Neural Engine...";
-    status.style.color = "#c4b5fd";
-
-    try {
-        let response = await fetch('/api/generate-track', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: customPrompt })
-        });
-
-        let data = await response.json();
-        
-        if (data.jobId) {
-            status.innerText = "Job queued! Processing audio (this takes about 30 seconds)...";
-            pollJobStatus(data.jobId);
-        } else {
-            status.innerText = "Error: " + (data.error || "Failed to start generation.");
-            status.style.color = "#ec4899";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AISUNG - GlobalMix AI Studio</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-    } catch (err) {
-        status.innerText = "Network error connecting to generation backend.";
-        status.style.color = "#ec4899";
-    }
-}
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #1e293b;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        h1 { font-size: 1.5rem; margin-bottom: 8px; color: #38bdf8; }
+        p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px; }
+        .chips-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .instrument-chip {
+            background: #334155;
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .instrument-chip.selected {
+            background: #0284c7;
+            color: white;
+        }
+        button {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover { background: #0ea5e9; }
+        #status-msg {
+            margin-top: 16px;
+            font-weight: 500;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
 
-async function pollJobStatus(jobId) {
-    let status = document.getElementById('status-msg');
-    
-    let interval = setInterval(async () => {
-        try {
-            let res = await fetch(`/api/job-status/${jobId}`);
-            let data = await res.json();
+    <div class="container">
+        <h1>AISUNG Studio</h1>
+        <p>Select your elements and generate your custom track:</p>
+        
+        <div class="chips-grid" id="chips-container">
+            <div class="instrument-chip" onclick="toggleChip(this)">Krar</div>
+            <div class="instrument-chip" onclick="toggleChip(this)">Pentatonic Melody</div>
+            <div class="instrument-chip" onclick="toggleChip(this)">Guayla Rhythm</div>
+            <div class="instrument-chip" onclick="toggleChip(this)">Acoustic Guitar</div>
+            <div class="instrument-chip" onclick="toggleChip(this)">Deep Bass</div>
+            <div class="instrument-chip" onclick="toggleChip(this)">Atmospheric Synth</div>
+        </div>
+
+        <button onclick="triggerGeneration()">Generate Track</button>
+        <div id="status-msg"></div>
+    </div>
+
+    <script>
+        function toggleChip(chip) {
+            chip.classList.toggle('selected');
+        }
+
+        async function triggerGeneration() {
+            let selectedChips = document.querySelectorAll('.instrument-chip.selected');
+            let status = document.getElementById('status-msg');
             
-            if (data.status === 'COMPLETED' && data.result) {
-                clearInterval(interval);
-                status.innerHTML = `✅ Track generated successfully! <br><a href="${data.result.audio_url || data.result}" target="_blank" style="color:#34d399; font-weight:bold;">Download / Play Audio 🎵</a>`;
-            } else if (data.status === 'FAILED') {
-                clearInterval(interval);
-                status.innerText = "❌ Generation failed on the server model.";
+            if (selectedChips.length === 0) {
+                status.innerText = "⚠️ Please select at least one instrument or genre element!";
+                status.style.color = "#ec4899";
+                return;
+            }
+            
+            let names = [];
+            selectedChips.forEach(c => names.push(c.innerText));
+            let customPrompt = "A professional studio track featuring: " + names.join(', ');
+            
+            status.innerText = "Submitting track to Apiframe Neural Engine...";
+            status.style.color = "#c4b5fd";
+            
+            try {
+                let response = await fetch('/api/generate-track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: customPrompt })
+                });
+                
+                let data = await response.json();
+                if (data.jobId) {
+                    status.innerText = "Job queued! Processing audio (this takes about 30 seconds)...";
+                    pollJobStatus(data.jobId);
+                } else {
+                    status.innerText = "Error: " + (data.error || "Failed to start generation.");
+                    status.style.color = "#ec4899";
+                }
+            } catch (err) {
+                status.innerText = "Network error connecting to generation backend.";
                 status.style.color = "#ec4899";
             }
-        } catch (e) {
-            console.error(e);
         }
-    }, 5000);
-}
+
+        async function pollJobStatus(jobId) {
+            let status = document.getElementById('status-msg');
+            let interval = setInterval(async () => {
+                try {
+                    let res = await fetch(`/api/job-status/${jobId}`);
+                    let data = await res.json();
+                    
+                    if (data.status === 'COMPLETED' && data.result) {
+                        clearInterval(interval);
+                        status.innerHTML = `✅ Track generated successfully!<br><a href="${data.result.audio_url || data.result}" target="_blank" style="color: #34d399; font-weight:bold;">Download / Play Audio 🎵</a>`;
+                    } else if (data.status === 'FAILED') {
+                        clearInterval(interval);
+                        status.innerText = "❌ Generation failed on the server model.";
+                        status.style.color = "#ec4899";
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
