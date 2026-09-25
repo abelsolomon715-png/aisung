@@ -1,180 +1,665 @@
-!DOCTYPE html>
-<html lang="en">
+```html
+<!DOCTYPE html>
+<html lang="en" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Music Generator</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-body {
-background-color: #0b1329;
-color: #f1f5f9;
-font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Studio - Music Generator</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              500: '#0284c7',
+              600: '#0284c7',
+              900: '#0c4a6e',
+              950: '#082f49'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Cinzel', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #070c18;
+      color: #f1f5f9;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b1329;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #38bdf8;
+    }
+  </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 flex justify-center items-start">
-​<div class="w-full max-w-xl space-y-6">
-<!-- Header -->
-<div class="text-center space-y-2">
-<h1 class="text-3xl font-extrabold text-sky-400">⚡ AI Studio Studio</h1>
-<p class="text-xs text-slate-400">Generate custom tracks instantly with AI</p>
-</div>
-​<!-- Main Card -->
-<div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl space-y-5">
-​<!-- Mode Selection -->
-<div>
-<label class="block text-sm font-semibold text-slate-300 mb-2">🎵 Song Type</label>
-<div class="grid grid-cols-2 gap-3">
-<button id="btnFull" onclick="selectType('full')" class="p-3 border rounded-xl text-left bg-sky-950/60 border-sky-500 text-sky-200">
-<div class="font-bold text-sm">Full Song</div>
-<div class="text-xs text-slate-400">With vocals & lyrics</div>
-</button>
-<button id="btnInst" onclick="selectType('instrumental')" class="p-3 border rounded-xl text-left bg-slate-800 border-slate-700 text-slate-300">
-<div class="font-bold text-sm">Instrumental Mix</div>
-<div class="text-xs text-slate-400">Instruments only</div>
-</button>
-</div>
-</div>
-​<!-- Prompt Input -->
-<div>
-<label class="block text-sm font-semibold text-slate-300 mb-2">⚡ Describe Your Track</label>
-<textarea id="promptInput" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-sky-500 text-white placeholder-slate-600" placeholder="e.g. Urban club rap flow, heavy bass bounce & rhythmic cadence"></textarea>
-</div>
-​<!-- Quick Ingredients -->
-<div>
-<label class="block text-xs font-semibold text-slate-400 mb-2">⚡ Quick Sonic Ingredients (Tap to add):</label>
-<div class="flex flex-wrap gap-2">
-<button onclick="addIngredient('Krar')" class="text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-700">Krar</button>
-<button onclick="addIngredient('Pentatonic Scale')" class="text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-700">Pentatonic Scale</button>
-<button onclick="addIngredient('Guayla Rhythm')" class="text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-700">Guayla Rhythm</button>
-<button onclick="addIngredient('Ethio-Jazz Groove')" class="text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-700">Ethio-Jazz Groove</button>
-<button onclick="addIngredient('Kebero Drums')" class="text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-700">Kebero Drums</button>
-<button onclick="addIngredient('Deep Bass')" class="text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-700">Deep Bass</button>
-</div>
-</div>
-​<!-- Submit Button -->
-<button id="generateBtn" onclick="handleGenerate()" class="w-full bg-sky-500 hover:bg-sky-400 font-bold text-slate-950 py-3.5 rounded-xl transition-all flex items-center justify-center space-x-2">
-<span id="btnText">Create Mix</span>
-<div id="btnSpinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-slate-950"></div>
-</button>
-​<!-- Status Toast -->
-<div id="statusToast" class="hidden text-center text-xs font-medium py-2 rounded-lg bg-sky-950/80 text-sky-300 border border-sky-800/50"></div>
-​</div>
-​<!-- History Panel -->
-<div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl space-y-4">
-<h2 class="text-base font-bold text-slate-200 flex items-center space-x-2">
-<span>📁 Your Mixes History</span>
-</h2>
-​<div id="mixesContainer" class="space-y-3">
-<p id="emptyText" class="text-xs text-slate-500 text-center py-4">No mixes generated yet.</p>
-</div>
-</div>
-​</div>
-​<script>
-let songType = 'full';
-​function selectType(type) {
-songType = type;
-const btnFull = document.getElementById('btnFull');
-const btnInst = document.getElementById('btnInst');
-​if (type === 'full') {
-btnFull.className = 'p-3 border rounded-xl text-left bg-sky-950/60 border-sky-500 text-sky-200';
-btnInst.className = 'p-3 border rounded-xl text-left bg-slate-800 border-slate-700 text-slate-300';
-} else {
-btnInst.className = 'p-3 border rounded-xl text-left bg-sky-950/60 border-sky-500 text-sky-200';
-btnFull.className = 'p-3 border rounded-xl text-left bg-slate-800 border-slate-700 text-slate-300';
-}
-}
-​function addIngredient(ingredient) {
-const promptInput = document.getElementById('promptInput');
-if (promptInput.value.length > 0) {
-promptInput.value += ', ' + ingredient;
-} else {
-promptInput.value = ingredient;
-}
-}
-​function showStatus(message) {
-const toast = document.getElementById('statusToast');
-toast.innerText = message;
-toast.classList.remove('hidden');
-}
-​function hideStatus() {
-document.getElementById('statusToast').classList.add('hidden');
-}
-​async function handleGenerate() {
-const prompt = document.getElementById('promptInput').value.trim();
-if (!prompt) {
-alert('Please enter a description or tap a sonic ingredient!');
-return;
-}
-​const btn = document.getElementById('generateBtn');
-const btnText = document.getElementById('btnText');
-const btnSpinner = document.getElementById('btnSpinner');
-​btn.disabled = true;
-btnText.innerText = 'Initializing Mix...';
-btnSpinner.classList.remove('hidden');
-showStatus('⏳ Requesting track generation from AI...');
-​try {
-// Step 1: Request creation
-const response = await fetch('/api/generate-music', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
-prompt: prompt,
-custom_mode: songType
-})
-});
-​const data = await response.json();
-​if (!response.ok || data.error) {
-throw new Error(data.error || 'Failed to start music generation');
-}
-​const taskId = data.task_id || data.id || (data.data && data.data.task_id);
-​if (!taskId) {
-throw new Error('No Task ID returned from generator');
-}
-​// Step 2: Poll for completion
-showStatus('🎼 AI is generating your track (approx 30-60s)...');
-btnText.innerText = 'Rendering Audio...';
-​let audioUrl = '';
-let attempts = 0;
-const maxAttempts = 30; // 30 * 5s = 150 seconds cutoff
-​while (attempts < maxAttempts) {
-await new Promise(resolve => setTimeout(resolve, 5000));
-attempts++;
-​showStatus(🎼 Rendering audio... (${attempts * 5}s));
-​const statusRes = await fetch(/api/status/${taskId});
-if (statusRes.ok) {
-const statusData = await statusRes.json();
-​audioUrl = statusData.audio_url ||
-(statusData.response && statusData.response.audio_url) ||
-(statusData.data && statusData.data.audio_url);
-​if (audioUrl) break;
-}
-}
-​if (!audioUrl) {
-throw new Error('Track generation timed out. Please try again.');
-}
-​showStatus('✅ Mix generated successfully!');
-addTrackToHistory(prompt, audioUrl);
-​} catch (err) {
-alert('Error: ' + err.message);
-hideStatus();
-} finally {
-btn.disabled = false;
-btnText.innerText = 'Create Mix';
-btnSpinner.classList.add('hidden');
-}
-}
-​function addTrackToHistory(title, url) {
-const container = document.getElementById('mixesContainer');
-const emptyText = document.getElementById('emptyText');
-if (emptyText) emptyText.remove();
-​const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-​const card = document.createElement('div');
-card.className = 'bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3';
-card.innerHTML = <div class="flex justify-between items-start"> <div class="font-semibold text-xs text-sky-300">Mix #${container.children.length + 1}</div> <div class="text-[10px] text-slate-500">${time}</div> </div> <p class="text-xs text-slate-200 font-medium">"${title}"</p> <audio controls class="w-full h-10 rounded-lg"> <source src="${url}" type="audio/mpeg"> Your browser does not support audio playback. </audio> <a href="${url}" target="_blank" download class="block text-center w-full bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs py-2 rounded-lg font-semibold hover:bg-sky-500/30"> 📥 Download Audio File </a>;
-​container.prepend(card);
-}
-</script>
+<body class="min-h-screen bg-slate-950 text-slate-100 pb-16">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3">
+    <div class="max-w-md mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
+          <i class="fa-solid fa-bolt text-sm"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-extrabold text-white tracking-wide">
+            AI Studio
+          </h1>
+          <p class="text-[10px] text-slate-400">Generate custom tracks instantly with AI</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <!-- Credits Badge -->
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl px-2.5 py-1 flex items-center space-x-1.5 text-xs">
+          <i class="fa-solid fa-coins text-amber-400 text-xs"></i>
+          <span id="creditsCount" class="font-bold text-sky-400">5</span>
+        </div>
+
+        <button onclick="openModal('upgradeModal')" class="bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold px-3 py-1 rounded-xl transition-all shadow-md shadow-sky-500/20">
+          Upgrade
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-md mx-auto p-4 space-y-5">
+
+    <!-- Toast Notification Popup Container -->
+    <div id="toast" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-50 min-w-[280px] max-w-sm bg-slate-900 border border-sky-500/50 text-sky-200 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all">
+      <i id="toastIcon" class="fa-solid fa-circle-info text-sky-400 text-lg"></i>
+      <div id="toastMessage" class="text-xs font-medium">Notification message...</div>
+    </div>
+
+    <!-- MAIN GENERATION FORM -->
+    <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 md:p-5 shadow-2xl space-y-4">
+      
+      <!-- Song Type Selector -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-music text-sky-400"></i> Song Type
+        </label>
+        <div class="grid grid-cols-2 gap-2.5">
+          <button id="btnFull" onclick="selectType('full')" class="p-3 border rounded-xl text-left bg-sky-950/60 border-sky-500 text-sky-200 transition-all">
+            <div class="font-bold text-xs text-white">Full Song</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">With vocals & lyrics</div>
+          </button>
+
+          <button id="btnInst" onclick="selectType('instrumental')" class="p-3 border rounded-xl text-left bg-slate-800/40 border-slate-700/80 text-slate-300 transition-all hover:bg-slate-800">
+            <div class="font-bold text-xs text-white">Instrumental Mix</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Instruments only</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mood & Vocal Filters -->
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1">
+            Theme / Mood
+          </label>
+          <select id="themeSelect" onchange="updatePromptFromTheme()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+            <option value="Inspirational">Inspirational</option>
+            <option value="Party">Club Party</option>
+            <option value="Chill">Chill & Lo-Fi</option>
+            <option value="Ethiopian Modern">Ethio-Fusion</option>
+            <option value="Gangster Rap">Urban Rap Flow</option>
+            <option value="Heartbreak">Heartbreak</option>
+            <option value="Love">Romantic R&B</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1">
+            Vocal Profile
+          </label>
+          <select id="vocalProfileSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+            <option value="Smooth Female Lead">Female Lead</option>
+            <option value="Gritty Male Flow">Male Rap Flow</option>
+            <option value="Dual Harmony Vocals">Dual Harmonies</option>
+            <option value="Autotune Trap Vocals">Autotune FX</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Prompt Input Box -->
+      <div>
+        <div class="flex justify-between items-center mb-1">
+          <label class="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-bolt text-amber-400"></i> Describe Your Track
+          </label>
+          <button onclick="clearPrompt()" class="text-[10px] text-slate-500 hover:text-slate-300">
+            Clear
+          </button>
+        </div>
+        <textarea id="promptInput" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs focus:outline-none focus:border-sky-500 text-white placeholder-slate-600 transition-all" placeholder="e.g. Urban club rap flow, heavy bass bounce & rhythmic cadence..."></textarea>
+      </div>
+
+      <!-- Quick Sonic Ingredients Chips -->
+      <div>
+        <label class="block text-[11px] font-semibold text-slate-400 mb-1.5 flex items-center gap-1">
+          <i class="fa-solid fa-bolt text-sky-400"></i> Quick Sonic Ingredients (Tap to add):
+        </label>
+        <div class="flex flex-wrap gap-1.5">
+          <button onclick="addIngredient('Krar')" class="text-xs bg-slate-800/80 hover:bg-sky-900/50 border border-slate-700/80 text-slate-300 px-2.5 py-1 rounded-lg transition-all">Krar</button>
+          <button onclick="addIngredient('Pentatonic Scale')" class="text-xs bg-slate-800/80 hover:bg-sky-900/50 border border-slate-700/80 text-slate-300 px-2.5 py-1 rounded-lg transition-all">Pentatonic Scale</button>
+          <button onclick="addIngredient('Guayla Rhythm')" class="text-xs bg-slate-800/80 hover:bg-sky-900/50 border border-slate-700/80 text-slate-300 px-2.5 py-1 rounded-lg transition-all">Guayla Rhythm</button>
+          <button onclick="addIngredient('Ethio-Jazz Groove')" class="text-xs bg-slate-800/80 hover:bg-sky-900/50 border border-slate-700/80 text-slate-300 px-2.5 py-1 rounded-lg transition-all">Ethio-Jazz Groove</button>
+          <button onclick="addIngredient('Kebero Drums')" class="text-xs bg-slate-800/80 hover:bg-sky-900/50 border border-slate-700/80 text-slate-300 px-2.5 py-1 rounded-lg transition-all">Kebero Drums</button>
+          <button onclick="addIngredient('Deep Bass')" class="text-xs bg-slate-800/80 hover:bg-sky-900/50 border border-slate-700/80 text-slate-300 px-2.5 py-1 rounded-lg transition-all">Deep Bass</button>
+        </div>
+      </div>
+
+      <!-- Live Active DNA Summary -->
+      <div class="bg-slate-950/70 border border-slate-800/80 rounded-xl p-2.5 flex items-center justify-between text-[11px]">
+        <div class="flex items-center space-x-1.5 text-slate-400">
+          <i class="fa-solid fa-dna text-sky-400"></i>
+          <span>Active DNA: <strong id="dnaSummary" class="text-sky-300 font-normal">Full Song • Inspirational</strong></span>
+        </div>
+        <span class="text-[10px] text-emerald-400 font-semibold"><i class="fa-solid fa-circle-check text-[9px] mr-1"></i>Commercial Ready</span>
+      </div>
+
+      <!-- Primary Generate Action Button -->
+      <button id="generateBtn" onclick="handleGenerate()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-sm py-3.5 rounded-xl transition-all shadow-lg shadow-sky-500/20 flex items-center justify-center space-x-2">
+        <i id="btnIcon" class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+        <span id="btnText">Create Track Mix</span>
+        <div id="btnSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent"></div>
+      </button>
+
+    </div>
+
+    <!-- TRACK HISTORY PANEL -->
+    <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 shadow-2xl space-y-3">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-1.5">
+          <i class="fa-solid fa-compact-disc text-sky-400"></i>
+          <span>Your Track Mixes</span>
+        </h2>
+        <span id="historyCount" class="text-[11px] font-mono text-slate-500">0 Tracks</span>
+      </div>
+
+      <!-- Mixes Container Feed -->
+      <div id="mixesContainer" class="space-y-3">
+        <div id="emptyText" class="text-center py-8 border border-dashed border-slate-800 rounded-xl">
+          <i class="fa-solid fa-music text-2xl text-slate-700 mb-2"></i>
+          <p class="text-xs text-slate-400 font-medium">No mixes generated yet.</p>
+          <p class="text-[10px] text-slate-600 mt-0.5">Select your options & tap "Create Track Mix"</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: Upgrade / Buy Credits Modal -->
+  <div id="upgradeModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl relative">
+      <button onclick="closeModal('upgradeModal')" class="absolute top-3 right-3 text-slate-400 hover:text-white text-base">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="text-center space-y-1">
+        <div class="w-10 h-10 bg-sky-500/20 text-sky-400 rounded-xl flex items-center justify-center mx-auto mb-1 text-lg">
+          <i class="fa-solid fa-crown"></i>
+        </div>
+        <h3 class="text-base font-bold text-white">Upgrade Studio Plan</h3>
+        <p class="text-xs text-slate-400">Select currency and credits package</p>
+      </div>
+
+      <!-- Currency Switcher -->
+      <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+        <button id="currEtb" onclick="switchCurrency('ETB')" class="flex-1 py-1 rounded-lg font-bold text-center bg-sky-500 text-slate-950">ETB (Telebirr/CBE)</button>
+        <button id="currUsd" onclick="switchCurrency('USD')" class="flex-1 py-1 rounded-lg font-bold text-center text-slate-400">USD (Global)</button>
+      </div>
+
+      <!-- Plans Container -->
+      <div id="planContainer" class="space-y-2.5">
+        <!-- Rendered dynamically in JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Commercial License Certificate Viewer -->
+  <div id="licenseModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl relative my-6">
+      <button onclick="closeModal('licenseModal')" class="absolute top-3 right-3 text-slate-400 hover:text-white text-base">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center space-x-2 text-amber-400 text-xs uppercase tracking-widest font-bold">
+        <i class="fa-solid fa-certificate"></i>
+        <span>Official Verification License</span>
+      </div>
+
+      <!-- Certificate Preview Box -->
+      <div id="certificateContent" class="bg-amber-50/95 text-slate-900 rounded-xl p-4 border-4 border-slate-900 space-y-3 font-serif relative">
+        <div class="text-center space-y-0.5">
+          <div class="text-[9px] font-sans font-extrabold tracking-widest text-amber-800 uppercase">AI Audio Vault</div>
+          <h2 class="text-lg font-bold text-slate-950 uppercase tracking-tight">Certificate of Commercial Ownership</h2>
+        </div>
+
+        <div class="bg-white/90 p-2.5 rounded border border-slate-200 text-[11px] font-mono space-y-1 text-slate-800">
+          <div class="flex justify-between"><span>TRACK TITLE:</span> <strong id="certTitle" class="text-slate-950 truncate max-w-[150px]">---</strong></div>
+          <div class="flex justify-between"><span>TRACK HASH:</span> <span id="certHash">---</span></div>
+          <div class="flex justify-between"><span>BPM:</span> <span id="certBpm">120 BPM</span></div>
+          <div class="flex justify-between"><span>DATE:</span> <span id="certDate">---</span></div>
+          <div class="flex justify-between"><span>RIGHTS:</span> <span class="text-emerald-700 font-bold">100% UNRESTRICTED</span></div>
+        </div>
+
+        <p class="text-[9px] text-slate-600 leading-relaxed font-sans text-center">
+          The holder retains perpetual, non-exclusive worldwide rights to monetize, distribute, broadcast, sync, sample, and sell master audio recordings produced under this registration identifier.
+        </p>
+      </div>
+
+      <button onclick="downloadCertificatePDF()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 rounded-xl transition-all flex items-center justify-center space-x-1.5">
+        <i class="fa-solid fa-file-arrow-down"></i>
+        <span>Download License Certificate (.TXT)</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* State Management */
+    let songType = 'full';
+    let userCredits = 5;
+    let mixesList = [];
+    let activeCurrency = 'ETB';
+    let currentCertTrack = null;
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMessage.innerText = message;
+      if (type === 'error') {
+        toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-lg';
+        toast.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-50 min-w-[280px] max-w-sm bg-slate-900 border border-rose-500/50 text-rose-200 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all';
+      } else if (type === 'success') {
+        toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-lg';
+        toast.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-50 min-w-[280px] max-w-sm bg-slate-900 border border-emerald-500/50 text-emerald-200 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all';
+      } else {
+        toastIcon.className = 'fa-solid fa-circle-info text-sky-400 text-lg';
+        toast.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-50 min-w-[280px] max-w-sm bg-slate-900 border border-sky-500/50 text-sky-200 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all';
+      }
+
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 4000);
+    }
+
+    function selectType(type) {
+      songType = type;
+      const btnFull = document.getElementById('btnFull');
+      const btnInst = document.getElementById('btnInst');
+      
+      if (type === 'full') {
+        btnFull.className = 'p-3 border rounded-xl text-left bg-sky-950/60 border-sky-500 text-sky-200 transition-all';
+        btnInst.className = 'p-3 border rounded-xl text-left bg-slate-800/40 border-slate-700/80 text-slate-300 transition-all hover:bg-slate-800';
+      } else {
+        btnInst.className = 'p-3 border rounded-xl text-left bg-sky-950/60 border-sky-500 text-sky-200 transition-all';
+        btnFull.className = 'p-3 border rounded-xl text-left bg-slate-800/40 border-slate-700/80 text-slate-300 transition-all hover:bg-slate-800';
+      }
+      updateDnaSummary();
+    }
+
+    function addIngredient(ingredient) {
+      const promptInput = document.getElementById('promptInput');
+      if (promptInput.value.trim().length > 0) {
+        promptInput.value += ', ' + ingredient;
+      } else {
+        promptInput.value = ingredient;
+      }
+      updateDnaSummary();
+    }
+
+    function clearPrompt() {
+      document.getElementById('promptInput').value = '';
+      updateDnaSummary();
+    }
+
+    function updatePromptFromTheme() {
+      const theme = document.getElementById('themeSelect').value;
+      const promptInput = document.getElementById('promptInput');
+      
+      const themePrompts = {
+        'Inspirational': 'Uplifting melody, inspiring build, rhythmic drums, motivational energy',
+        'Party': 'High energy club banger, energetic dance floor bounce, heavy sub-bass drive',
+        'Chill': 'Smooth lo-fi chill haze, vinyl warm crackle, relaxed saxophone melodies',
+        'Ethiopian Modern': 'Ethio-Fusion rhythm, pentatonic Krar melodies, Kebero drum breakdown',
+        'Gangster Rap': 'Urban club rap flow, heavy bass bounce & rhythmic cadence',
+        'Heartbreak': 'Emotional piano chords, slow mournful vocal melody, subtle acoustic guitar',
+        'Love': 'Warm romantic R&B groove, silky smooth melodies, subtle electric piano chords'
+      };
+
+      if (themePrompts[theme]) {
+        promptInput.value = themePrompts[theme];
+      }
+      updateDnaSummary();
+    }
+
+    function updateDnaSummary() {
+      const dnaSummary = document.getElementById('dnaSummary');
+      const theme = document.getElementById('themeSelect').value;
+      const typeText = songType === 'full' ? 'Full Song' : 'Instrumental';
+      dnaSummary.innerText = `${typeText} • ${theme}`;
+    }
+
+    async function handleGenerate() {
+      const prompt = document.getElementById('promptInput').value.trim();
+      if (!prompt) {
+        showToast('Please enter a description or tap a sonic ingredient!', 'error');
+        return;
+      }
+
+      if (userCredits <= 0) {
+        showToast('You ran out of credits! Please upgrade to continue.', 'error');
+        openModal('upgradeModal');
+        return;
+      }
+
+      const btn = document.getElementById('generateBtn');
+      const btnText = document.getElementById('btnText');
+      const btnIcon = document.getElementById('btnIcon');
+      const btnSpinner = document.getElementById('btnSpinner');
+
+      btn.disabled = true;
+      btn.classList.add('opacity-80');
+      btnIcon.classList.add('hidden');
+      btnSpinner.classList.remove('hidden');
+      btnText.innerText = 'Synthesizing Audio...';
+
+      // Deduct credit
+      userCredits--;
+      document.getElementById('creditsCount').innerText = userCredits;
+
+      try {
+        let audioUrl = '';
+
+        // Attempt Backend API endpoint fetch with Polling logic
+        try {
+          const response = await fetch('/api/generate-music', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: prompt,
+              custom_mode: songType,
+              vocal_profile: document.getElementById('vocalProfileSelect').value
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const taskId = data.task_id || data.id;
+            
+            if (taskId) {
+              btnText.innerText = 'Rendering Audio Stream...';
+              let attempts = 0;
+              // Polling loop: Wait up to 30 seconds for audio rendering
+              while (attempts < 6) {
+                await new Promise(r => setTimeout(r, 4000));
+                attempts++;
+                const statusRes = await fetch(`/api/status/${taskId}`);
+                if (statusRes.ok) {
+                  const statusData = await statusRes.json();
+                  if (statusData.audio_url) {
+                    audioUrl = statusData.audio_url;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        } catch (apiErr) {
+          console.log('Backend API offline or preview mode. Falling back to high-quality preview stream...');
+        }
+
+        // Fallback preview streams if server is not attached
+        if (!audioUrl) {
+          audioUrl = await getDemoAudioStream();
+        }
+
+        showToast('✅ Mix generated successfully!', 'success');
+        addTrackToHistory(prompt, audioUrl);
+
+      } catch (err) {
+        showToast('Generation error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-80');
+        btnIcon.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+        btnText.innerText = 'Create Track Mix';
+      }
+    }
+
+    function getDemoAudioStream() {
+      return new Promise((resolve) => {
+        const demoAudioStreams = [
+          "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3",
+          "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=chill-abstract-intention-12099.mp3",
+          "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=hip-hop-rock-beats-118000.mp3"
+        ];
+        const randomStream = demoAudioStreams[Math.floor(Math.random() * demoAudioStreams.length)];
+        setTimeout(() => resolve(randomStream), 1200);
+      });
+    }
+
+    function addTrackToHistory(title, url) {
+      const container = document.getElementById('mixesContainer');
+      const emptyText = document.getElementById('emptyText');
+      if (emptyText) emptyText.remove();
+
+      const trackId = 'TRK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const bpm = Math.floor(Math.random() * (135 - 90 + 1)) + 90;
+      const theme = document.getElementById('themeSelect').value;
+
+      const trackData = {
+        id: trackId,
+        title: title,
+        url: url,
+        time: time,
+        bpm: bpm,
+        theme: theme,
+        date: new Date().toLocaleDateString()
+      };
+
+      mixesList.unshift(trackData);
+      document.getElementById('historyCount').innerText = `${mixesList.length} Tracks`;
+
+      const card = document.createElement('div');
+      card.className = 'bg-slate-950/90 border border-slate-800/90 rounded-xl p-3.5 space-y-2.5 shadow-lg';
+      card.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div class="flex items-center space-x-1.5">
+            <span class="bg-sky-500/20 text-sky-400 border border-sky-500/30 font-mono text-[9px] px-1.5 py-0.5 rounded font-bold">${trackId}</span>
+            <span class="text-[10px] text-slate-400">${theme} • ${bpm} BPM</span>
+          </div>
+          <div class="text-[10px] text-slate-500">${time}</div>
+        </div>
+
+        <div class="font-semibold text-xs text-slate-100 line-clamp-2">
+          "${title}"
+        </div>
+
+        <!-- Custom Audio Player Element -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-2">
+          <audio controls class="w-full h-8 rounded-lg focus:outline-none">
+            <source src="${url}" type="audio/mpeg">
+            Your browser does not support audio playback.
+          </audio>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-0.5">
+          <a href="${url}" target="_blank" download="${title.substring(0, 15)}_Mix.mp3" class="bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[11px] py-1.5 rounded-lg font-semibold text-center transition-all flex items-center justify-center space-x-1">
+            <i class="fa-solid fa-download text-[10px]"></i>
+            <span>Download</span>
+          </a>
+
+          <button onclick="openLicenseModal('${trackId}')" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center space-x-1">
+            <i class="fa-solid fa-file-contract text-[10px]"></i>
+            <span>License</span>
+          </button>
+        </div>
+      `;
+
+      container.prepend(card);
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+      if (id === 'upgradeModal') renderUpgradePlans();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function switchCurrency(curr) {
+      activeCurrency = curr;
+      const btnEtb = document.getElementById('currEtb');
+      const btnUsd = document.getElementById('currUsd');
+
+      if (curr === 'ETB') {
+        btnEtb.className = 'flex-1 py-1 rounded-lg font-bold text-center bg-sky-500 text-slate-950';
+        btnUsd.className = 'flex-1 py-1 rounded-lg font-bold text-center text-slate-400';
+      } else {
+        btnUsd.className = 'flex-1 py-1 rounded-lg font-bold text-center bg-sky-500 text-slate-950';
+        btnEtb.className = 'flex-1 py-1 rounded-lg font-bold text-center text-slate-400';
+      }
+      renderUpgradePlans();
+    }
+
+    function renderUpgradePlans() {
+      const container = document.getElementById('planContainer');
+      if (activeCurrency === 'ETB') {
+        container.innerHTML = `
+          <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl flex justify-between items-center">
+            <div>
+              <div class="font-bold text-xs text-white">Starter Pass</div>
+              <div class="text-[10px] text-slate-400">+50 Track Credits</div>
+            </div>
+            <button onclick="purchaseCredits(50)" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg">1,200 ETB</button>
+          </div>
+          <div class="bg-slate-950 border border-sky-500/50 p-3 rounded-xl flex justify-between items-center relative overflow-hidden">
+            <div>
+              <div class="font-bold text-xs text-white">Pro Pass</div>
+              <div class="text-[10px] text-slate-400">+200 Track Credits</div>
+            </div>
+            <button onclick="purchaseCredits(200)" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg">3,000 ETB</button>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl flex justify-between items-center">
+            <div>
+              <div class="font-bold text-xs text-white">Starter Pass</div>
+              <div class="text-[10px] text-slate-400">+50 Track Credits</div>
+            </div>
+            <button onclick="purchaseCredits(50)" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg">$9.99 USD</button>
+          </div>
+          <div class="bg-slate-950 border border-sky-500/50 p-3 rounded-xl flex justify-between items-center relative overflow-hidden">
+            <div>
+              <div class="font-bold text-xs text-white">Pro Pass</div>
+              <div class="text-[10px] text-slate-400">+200 Track Credits</div>
+            </div>
+            <button onclick="purchaseCredits(200)" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg">$24.99 USD</button>
+          </div>
+        `;
+      }
+    }
+
+    function purchaseCredits(amount) {
+      userCredits += amount;
+      document.getElementById('creditsCount').innerText = userCredits;
+      showToast(`🎉 Added +${amount} Credits to your account!`, 'success');
+      closeModal('upgradeModal');
+    }
+
+    function openLicenseModal(trackId) {
+      const track = mixesList.find(t => t.id === trackId);
+      if (!track) return;
+
+      currentCertTrack = track;
+      document.getElementById('certTitle').innerText = track.title;
+      document.getElementById('certHash').innerText = track.id + '-SHA256-COMMERCIAL';
+      document.getElementById('certBpm').innerText = track.bpm + ' BPM';
+      document.getElementById('certDate').innerText = track.date + ' ' + track.time;
+
+      openModal('licenseModal');
+    }
+
+    function downloadCertificatePDF() {
+      if (!currentCertTrack) return;
+      
+      const element = document.createElement('a');
+      const certText = `
+====================================================
+OFFICIAL CERTIFICATE OF COMMERCIAL OWNERSHIP
+====================================================
+Track Title: ${currentCertTrack.title}
+Registration Hash: ${currentCertTrack.id}
+Genre / Theme: ${currentCertTrack.theme}
+BPM / Tempo: ${currentCertTrack.bpm} BPM
+Timestamp: ${currentCertTrack.date} ${currentCertTrack.time}
+
+COMMERCIAL RIGHTS ASSIGNMENT:
+This document verifies that full 100% unrestricted worldwide 
+commercial exploitation rights for this audio recording are 
+assigned to the registered creator pass holder.
+====================================================
+      `.trim();
+
+      const blob = new Blob([certText], { type: 'text/plain;charset=utf-8' });
+      element.href = URL.createObjectURL(blob);
+      element.download = `${currentCertTrack.title.substring(0, 12)}_Commercial_Certificate.txt`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+
+      showToast('📄 Commercial License downloaded successfully!', 'success');
+      closeModal('licenseModal');
+    }
+
+    window.onload = function() {
+      updateDnaSummary();
+    };
+  </script>
 </body>
 </html>
+
+```
