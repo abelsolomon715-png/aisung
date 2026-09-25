@@ -68,7 +68,6 @@
         }
         textarea:focus { border-color: var(--accent); }
         
-        /* Live Prompt Intelligence Box */
         .intelligence-box {
             background: rgba(196, 181, 253, 0.05);
             border: 1px dashed var(--purple-glow);
@@ -144,6 +143,52 @@
             font-size: 0.9rem;
             word-break: break-all;
         }
+
+        /* History & Player Styles */
+        .history-item {
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .history-prompt {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+        .history-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .btn-action {
+            flex: 1;
+            padding: 8px;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        .btn-play { background: #1e293b; color: #38bdf8; border: 1px solid var(--accent); }
+        .btn-download { background: var(--accent); color: white; }
+        audio {
+            width: 100%;
+            margin-top: 6px;
+            height: 36px;
+        }
     </style>
 </head>
 <body>
@@ -151,14 +196,14 @@
     <div class="container">
         <header>
             <h1>AISUNG Studio</h1>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">Neural Intelligence Active</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Studio v2.5 Active</span>
         </header>
 
         <!-- Song Description with Semantic Intelligence Analysis -->
         <div class="card">
             <h3>✏️ Song Description & Intelligent Prompt</h3>
             <p class="desc">Describe your track, suggest artists, or mention instruments naturally...</p>
-            <textarea id="user-prompt" rows="3" placeholder="e.g., A smooth Ethio-jazz groove inspired by Mahmoud Ahmed with a modern deep bass beat..." oninput="analyzePrompt()"></textarea>
+            <textarea id="user-prompt" rows="3" placeholder="e.g., A cool trendy and catchy rap like walk it out by dj unk" oninput="analyzePrompt()"></textarea>
             
             <div id="ai-insight" class="intelligence-box">
                 🔍 <span>Intent Detected:</span> <span id="insight-text">Analyzing text context...</span>
@@ -197,10 +242,24 @@
 
         <button class="btn-primary" onclick="triggerGeneration()">Create Mix</button>
         <div id="status-msg"></div>
+
+        <!-- Track History Section -->
+        <div class="card" style="margin-top: 10px;">
+            <h3>📂 Your Mixes History</h3>
+            <p class="desc">Previously generated tracks saved locally for instant playback and download.</p>
+            <div id="history-container">
+                <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin: 10px 0;">No mixes generated yet.</p>
+            </div>
+        </div>
     </div>
 
     <script>
         let selectedSongType = 'Full Song with vocals & lyrics';
+
+        // Load history on startup
+        window.onload = function() {
+            renderHistory();
+        };
 
         function setSongType(type) {
             selectedSongType = type;
@@ -217,7 +276,6 @@
             analyzePrompt();
         }
 
-        // Semantic analyzer simulation to understand artists, vibes, and styles on the fly
         function analyzePrompt() {
             let text = document.getElementById('user-prompt').value.trim();
             let insightBox = document.getElementById('ai-insight');
@@ -232,25 +290,17 @@
             let lowerText = text.toLowerCase();
             let detectedElements = [];
 
-            // Intelligent pattern matching for artists/styles
-            if (lowerText.includes('mahmoud') || lowerText.includes('ethio') || lowerText.includes('jazz')) {
+            if (lowerText.includes('rap') || lowerText.includes('hip hop') || lowerText.includes('unk') || lowerText.includes('trendy')) {
+                detectedElements.push("Urban club rap flow, heavy bass bounce & rhythmic cadence mapped");
+            } else if (lowerText.includes('mahmoud') || lowerText.includes('ethio') || lowerText.includes('jazz')) {
                 detectedElements.push("Ethio-Jazz modal stylings & vintage horn arrangements");
-            }
-            if (lowerText.includes('guayla') || lowerText.includes('kebero')) {
+            } else if (lowerText.includes('guayla') || lowerText.includes('kebero')) {
                 detectedElements.push("Traditional energetic ጓይላ rhythm & percussion profile");
-            }
-            if (lowerText.includes('krar') || lowerText.includes('pentatonic')) {
-                detectedElements.push("Authentic pentatonic string scaling");
-            }
-            if (lowerText.includes('bass') || lowerText.includes('modern') || lowerText.includes('beat')) {
-                detectedElements.push("Contemporary low-end electronic mixing");
+            } else {
+                detectedElements.push("Custom open-text composition context mapped.");
             }
 
-            if (detectedElements.length > 0) {
-                insightText.innerText = detectedElements.join(" | ");
-            } else {
-                insightText.innerText = "Custom open-text composition context mapped.";
-            }
+            insightText.innerText = detectedElements.join(" | ");
         }
 
         async function triggerGeneration() {
@@ -278,7 +328,7 @@
                 let data = await response.json();
                 if (data.jobId) {
                     status.innerText = "Mix queued! Processing audio (this takes about 30 seconds)...";
-                    pollJobStatus(data.jobId);
+                    pollJobStatus(data.jobId, promptText);
                 } else {
                     status.innerText = "Error: " + (data.error || "Failed to start generation.");
                     status.style.color = "var(--pink-error)";
@@ -289,7 +339,7 @@
             }
         }
 
-        async function pollJobStatus(jobId) {
+        async function pollJobStatus(jobId, originalPrompt) {
             let status = document.getElementById('status-msg');
             let interval = setInterval(async () => {
                 try {
@@ -303,8 +353,11 @@
                             audioUrl = audioUrl.url || audioUrl.link || JSON.stringify(audioUrl);
                         }
 
-                        status.innerHTML = `✅ Mix generated successfully with intelligent context!<br><br>` +
-                            `<a href="${audioUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--green-success); font-weight:bold; font-size: 1.05rem; text-decoration: underline;">📥 Open / Download Audio Mix 🎵</a>`;
+                        status.innerHTML = `✅ Mix generated successfully and saved to history!`;
+                        status.style.color = "var(--green-success)";
+
+                        // Save to localStorage history
+                        saveToHistory(originalPrompt, audioUrl);
                     } else if (data.status === 'FAILED') {
                         clearInterval(interval);
                         status.innerText = "❌ Generation failed on the server model.";
@@ -314,6 +367,45 @@
                     console.error(e);
                 }
             }, 5000);
+        }
+
+        function saveToHistory(prompt, url) {
+            let history = JSON.parse(localStorage.getItem('aisung_history') || '[]');
+            history.unshift({
+                prompt: prompt,
+                url: url,
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+            localStorage.setItem('aisung_history', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            let container = document.getElementById('history-container');
+            let history = JSON.parse(localStorage.getItem('aisung_history') || '[]');
+
+            if (history.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin: 10px 0;">No mixes generated yet.</p>`;
+                return;
+            }
+
+            let html = '';
+            history.forEach((item, index) => {
+                html += `
+                    <div class="history-item">
+                        <div class="history-header">
+                            <span>Mix #${history.length - index}</span>
+                            <span>${item.date}</span>
+                        </div>
+                        <div class="history-prompt">"${item.prompt}"</div>
+                        <audio controls src="${item.url}"></audio>
+                        <div class="history-actions">
+                            <a href="${item.url}" target="_blank" download class="btn-action btn-download">📥 Download File</a>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
         }
     </script>
 </body>
