@@ -173,21 +173,22 @@
         }
         .btn-action {
             flex: 1;
-            padding: 8px;
+            padding: 10px;
             border-radius: 6px;
             border: none;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: bold;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
         }
-        .btn-play { background: #1e293b; color: #38bdf8; border: 1px solid var(--accent); }
-        .btn-download { background: var(--accent); color: white; }
+        .btn-download { background: var(--accent); color: white; display: block; }
+        .btn-download:hover { background: var(--accent-hover); }
+        
         audio {
             width: 100%;
             margin-top: 6px;
-            height: 36px;
+            height: 38px;
         }
     </style>
 </head>
@@ -196,7 +197,7 @@
     <div class="container">
         <header>
             <h1>AISUNG Studio</h1>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">Studio v2.5 Active</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Studio v2.6 Active</span>
         </header>
 
         <!-- Song Description with Semantic Intelligence Analysis -->
@@ -256,7 +257,6 @@
     <script>
         let selectedSongType = 'Full Song with vocals & lyrics';
 
-        // Load history on startup
         window.onload = function() {
             renderHistory();
         };
@@ -348,15 +348,26 @@
                     
                     if (data.status === 'COMPLETED' && data.result) {
                         clearInterval(interval);
-                        let audioUrl = data.result.audio_url || data.result.url || data.result;
-                        if (typeof audioUrl === 'object') {
-                            audioUrl = audioUrl.url || audioUrl.link || JSON.stringify(audioUrl);
+                        
+                        // Deep-inspect backend response format to extract the valid playable URL/string
+                        let rawResult = data.result;
+                        let audioUrl = '';
+
+                        if (typeof rawResult === 'string') {
+                            audioUrl = rawResult;
+                        } else if (typeof rawResult === 'object' && rawResult !== null) {
+                            audioUrl = rawResult.audio_url || rawResult.url || rawResult.link || rawResult.file || JSON.stringify(rawResult);
+                        }
+
+                        // Fallback check if it's still wrapped or invalid
+                        if (!audioUrl || audioUrl.startsWith('{')) {
+                            status.innerText = "⚠️ Received response object, checking data structure...";
+                            console.error("Malformed audio result:", rawResult);
                         }
 
                         status.innerHTML = `✅ Mix generated successfully and saved to history!`;
                         status.style.color = "var(--green-success)";
 
-                        // Save to localStorage history
                         saveToHistory(originalPrompt, audioUrl);
                     } else if (data.status === 'FAILED') {
                         clearInterval(interval);
@@ -380,6 +391,28 @@
             renderHistory();
         }
 
+        async function downloadTrack(url, promptText) {
+            if (!url || url.startsWith('{')) {
+                alert("Audio file link is currently unavailable or processing.");
+                return;
+            }
+            try {
+                let response = await fetch(url);
+                let blob = await response.blob();
+                let blobUrl = window.URL.createObjectURL(blob);
+                let a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = `AISUNG_${promptText.slice(0, 15).replace(/[^a-zA-Z0-9]/g, '_')}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (e) {
+                // Fallback if CORS blocks blob download
+                window.open(url, '_blank');
+            }
+        }
+
         function renderHistory() {
             let container = document.getElementById('history-container');
             let history = JSON.parse(localStorage.getItem('aisung_history') || '[]');
@@ -391,6 +424,9 @@
 
             let html = '';
             history.forEach((item, index) => {
+                let safeUrl = item.url || '';
+                let safePrompt = item.prompt.replace(/"/g, '&quot;');
+                
                 html += `
                     <div class="history-item">
                         <div class="history-header">
@@ -398,9 +434,9 @@
                             <span>${item.date}</span>
                         </div>
                         <div class="history-prompt">"${item.prompt}"</div>
-                        <audio controls src="${item.url}"></audio>
+                        <audio controls preload="none" src="${safeUrl}"></audio>
                         <div class="history-actions">
-                            <a href="${item.url}" target="_blank" download class="btn-action btn-download">📥 Download File</a>
+                            <button class="btn-action btn-download" onclick="downloadTrack('${safeUrl}', '${safePrompt}')">📥 Download Audio File</button>
                         </div>
                     </div>
                 `;
