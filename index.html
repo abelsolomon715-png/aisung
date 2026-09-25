@@ -5,24 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AISUNG - GlobalMix AI Studio</title>
     <style>
-        :root {
-            --bg-main: #090d16;
-            --bg-card: #131d31;
-            --border-color: #1e293b;
-            --accent: #0284c7;
-            --accent-hover: #0ea5e9;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --pink-error: #ec4899;
-            --green-success: #34d399;
-            --purple-glow: #c4b5fd;
-        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-main);
+            background-color: #0f172a;
+            color: #f8fafc;
             margin: 0;
-            padding: 16px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -30,118 +18,48 @@
         .container {
             max-width: 600px;
             width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            padding-bottom: 40px;
-        }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-card);
-            padding: 16px 20px;
+            background: #1e293b;
+            padding: 24px;
             border-radius: 12px;
-            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        h1 { font-size: 1.25rem; margin: 0; color: #38bdf8; }
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-        }
-        h3 { font-size: 0.95rem; margin-top: 0; margin-bottom: 8px; color: var(--text-main); }
-        p.desc { color: var(--text-muted); font-size: 0.8rem; margin: 0 0 12px 0; }
-        
-        textarea {
-            width: 100%;
-            background: #090d16;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-main);
-            padding: 12px;
-            font-size: 0.9rem;
-            box-sizing: border-box;
-            resize: vertical;
-            outline: none;
-        }
-        textarea:focus { border-color: var(--accent); }
-        
-        /* Live Prompt Intelligence Box */
-        .intelligence-box {
-            background: rgba(196, 181, 253, 0.05);
-            border: 1px dashed var(--purple-glow);
-            border-radius: 8px;
-            padding: 10px 12px;
-            margin-top: 10px;
-            font-size: 0.8rem;
-            color: var(--purple-glow);
-            display: none;
-        }
-        .intelligence-box span { font-weight: bold; }
-
+        h1 { font-size: 1.5rem; margin-bottom: 8px; color: #38bdf8; }
+        p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px; }
         .chips-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
+            margin-bottom: 20px;
         }
-        .chip {
-            background: #1e293b;
-            color: var(--text-muted);
-            padding: 6px 12px;
-            border-radius: 16px;
+        .instrument-chip {
+            background: #334155;
+            padding: 8px 14px;
+            border-radius: 20px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             user-select: none;
-            border: 1px solid transparent;
-            transition: all 0.2s;
+            transition: background 0.2s;
         }
-        .chip.selected {
-            background: rgba(2, 132, 199, 0.2);
-            color: #38bdf8;
-            border-color: var(--accent);
+        .instrument-chip.selected {
+            background: #0284c7;
+            color: white;
         }
-        
-        .song-type-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .type-option {
-            background: #090d16;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px;
-            cursor: pointer;
-            text-align: left;
-        }
-        .type-option.selected {
-            border-color: var(--accent);
-            background: rgba(2, 132, 199, 0.1);
-        }
-        .type-option div:first-child { font-weight: bold; font-size: 0.9rem; }
-        .type-option div:last-child { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
-
-        .btn-primary {
-            background: var(--accent);
+        button {
+            background: #0284c7;
             color: white;
             border: none;
-            padding: 14px;
+            padding: 12px 20px;
             border-radius: 8px;
             font-size: 1rem;
             cursor: pointer;
             width: 100%;
             font-weight: bold;
-            transition: background 0.2s;
         }
-        .btn-primary:hover { background: var(--accent-hover); }
-        
+        button:hover { background: #0ea5e9; }
         #status-msg {
-            margin-top: 12px;
+            margin-top: 16px;
             font-weight: 500;
             text-align: center;
-            font-size: 0.9rem;
             word-break: break-all;
         }
     </style>
@@ -149,143 +67,62 @@
 <body>
 
     <div class="container">
-        <header>
-            <h1>AISUNG Studio</h1>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">Neural Intelligence Active</span>
-        </header>
-
-        <!-- Song Description with Semantic Intelligence Analysis -->
-        <div class="card">
-            <h3>✏️ Song Description & Intelligent Prompt</h3>
-            <p class="desc">Describe your track, suggest artists, or mention instruments naturally...</p>
-            <textarea id="user-prompt" rows="3" placeholder="e.g., A smooth Ethio-jazz groove inspired by Mahmoud Ahmed with a modern deep bass beat..." oninput="analyzePrompt()"></textarea>
-            
-            <div id="ai-insight" class="intelligence-box">
-                🔍 <span>Intent Detected:</span> <span id="insight-text">Analyzing text context...</span>
-            </div>
+        <h1>AISUNG Studio</h1>
+        <p>Select your elements and generate your custom track:</p>
+        
+        <div class="chips-grid" id="chips-container">
+            <div class="instrument-chip" onclick="toggleChip(this)">Krar</div>
+            <div class="instrument-chip" onclick="toggleChip(this)">Pentatonic Melody</div>
+            <div class="instrument-chip" onclick="toggleChip(this)">Guayla Rhythm</div>
+            <div class="instrument-chip" onclick="toggleChip(this)">Acoustic Guitar</div>
+            <div class="instrument-chip" onclick="toggleChip(this)">Deep Bass</div>
+            <div class="instrument-chip" onclick="toggleChip(this)">Atmospheric Synth</div>
         </div>
 
-        <!-- Song Type Selector -->
-        <div class="card">
-            <h3>🎵 Song Type</h3>
-            <div class="song-type-grid">
-                <div class="type-option selected" id="type-full" onclick="setSongType('Full Song with vocals & lyrics')">
-                    <div>Full Song</div>
-                    <div>With vocals & lyrics</div>
-                </div>
-                <div class="type-option" id="type-instr" onclick="setSongType('Instrumental Mix, no vocals')">
-                    <div>Instrumental Mix</div>
-                    <div>No vocals, instruments only</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sonic Ingredients / Quick Chips -->
-        <div class="card">
-            <h3>⚡ Quick Sonic Ingredients</h3>
-            <p class="desc">Tap elements to append them to your prompt instantly:</p>
-            <div class="chips-grid" id="chips-container">
-                <div class="chip" onclick="toggleChip(this, 'Krar')">Krar</div>
-                <div class="chip" onclick="toggleChip(this, 'Pentatonic Scale')">Pentatonic Scale</div>
-                <div class="chip" onclick="toggleChip(this, 'Guayla Rhythm')">Guayla Rhythm</div>
-                <div class="chip" onclick="toggleChip(this, 'Ethio-Jazz Groove')">Ethio-Jazz Groove</div>
-                <div class="chip" onclick="toggleChip(this, 'Kebero Drums')">Kebero Drums</div>
-                <div class="chip" onclick="toggleChip(this, 'Deep Bass')">Deep Bass</div>
-                <div class="chip" onclick="toggleChip(this, 'Acoustic Guitar')">Acoustic Guitar</div>
-            </div>
-        </div>
-
-        <button class="btn-primary" onclick="triggerGeneration()">Create Mix</button>
+        <button onclick="triggerGeneration()">Generate Track</button>
         <div id="status-msg"></div>
     </div>
 
     <script>
-        let selectedSongType = 'Full Song with vocals & lyrics';
-
-        function setSongType(type) {
-            selectedSongType = type;
-            document.getElementById('type-full').classList.toggle('selected', type.includes('Full'));
-            document.getElementById('type-instr').classList.toggle('selected', !type.includes('Full'));
-        }
-
-        function toggleChip(chip, text) {
+        function toggleChip(chip) {
             chip.classList.toggle('selected');
-            let textarea = document.getElementById('user-prompt');
-            if (chip.classList.contains('selected')) {
-                textarea.value += (textarea.value ? ', ' : '') + text;
-            }
-            analyzePrompt();
-        }
-
-        // Semantic analyzer simulation to understand artists, vibes, and styles on the fly
-        function analyzePrompt() {
-            let text = document.getElementById('user-prompt').value.trim();
-            let insightBox = document.getElementById('ai-insight');
-            let insightText = document.getElementById('insight-text');
-
-            if (!text) {
-                insightBox.style.display = 'none';
-                return;
-            }
-
-            insightBox.style.display = 'block';
-            let lowerText = text.toLowerCase();
-            let detectedElements = [];
-
-            // Intelligent pattern matching for artists/styles
-            if (lowerText.includes('mahmoud') || lowerText.includes('ethio') || lowerText.includes('jazz')) {
-                detectedElements.push("Ethio-Jazz modal stylings & vintage horn arrangements");
-            }
-            if (lowerText.includes('guayla') || lowerText.includes('kebero')) {
-                detectedElements.push("Traditional energetic ጓይላ rhythm & percussion profile");
-            }
-            if (lowerText.includes('krar') || lowerText.includes('pentatonic')) {
-                detectedElements.push("Authentic pentatonic string scaling");
-            }
-            if (lowerText.includes('bass') || lowerText.includes('modern') || lowerText.includes('beat')) {
-                detectedElements.push("Contemporary low-end electronic mixing");
-            }
-
-            if (detectedElements.length > 0) {
-                insightText.innerText = detectedElements.join(" | ");
-            } else {
-                insightText.innerText = "Custom open-text composition context mapped.";
-            }
         }
 
         async function triggerGeneration() {
-            let promptText = document.getElementById('user-prompt').value.trim();
+            let selectedChips = document.querySelectorAll('.instrument-chip.selected');
             let status = document.getElementById('status-msg');
             
-            if (!promptText) {
-                status.innerText = "⚠️ Please write or select a song description first!";
-                status.style.color = "var(--pink-error)";
+            if (selectedChips.length === 0) {
+                status.innerText = "⚠️ Please select at least one instrument or genre element!";
+                status.style.color = "#ec4899";
                 return;
             }
             
-            let finalPrompt = `${promptText} [Style: ${selectedSongType}]`;
+            let names = [];
+            selectedChips.forEach(c => names.push(c.innerText));
+            let customPrompt = "A professional studio track featuring: " + names.join(', ');
             
-            status.innerText = "Analyzing semantic context and submitting mix request...";
+            status.innerText = "Submitting track to Apiframe Neural Engine...";
             status.style.color = "#c4b5fd";
             
             try {
                 let response = await fetch('/api/generate-track', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: finalPrompt })
+                    body: JSON.stringify({ prompt: customPrompt })
                 });
                 
                 let data = await response.json();
                 if (data.jobId) {
-                    status.innerText = "Mix queued! Processing audio (this takes about 30 seconds)...";
+                    status.innerText = "Job queued! Processing audio (this takes about 30 seconds)...";
                     pollJobStatus(data.jobId);
                 } else {
                     status.innerText = "Error: " + (data.error || "Failed to start generation.");
-                    status.style.color = "var(--pink-error)";
+                    status.style.color = "#ec4899";
                 }
             } catch (err) {
                 status.innerText = "Network error connecting to generation backend.";
-                status.style.color = "var(--pink-error)";
+                status.style.color = "#ec4899";
             }
         }
 
@@ -298,17 +135,19 @@
                     
                     if (data.status === 'COMPLETED' && data.result) {
                         clearInterval(interval);
+                        
+                        // Extract audio URL safely from various possible response formats
                         let audioUrl = data.result.audio_url || data.result.url || data.result;
                         if (typeof audioUrl === 'object') {
                             audioUrl = audioUrl.url || audioUrl.link || JSON.stringify(audioUrl);
                         }
 
-                        status.innerHTML = `✅ Mix generated successfully with intelligent context!<br><br>` +
-                            `<a href="${audioUrl}" target="_blank" rel="noopener noreferrer" style="color: var(--green-success); font-weight:bold; font-size: 1.05rem; text-decoration: underline;">📥 Open / Download Audio Mix 🎵</a>`;
+                        status.innerHTML = `✅ Track generated successfully!<br><br>` +
+                            `<a href="${audioUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="color: #34d399; font-weight:bold; font-size: 1.1rem; text-decoration: underline;">📥 Open / Download Audio File 🎵</a>`;
                     } else if (data.status === 'FAILED') {
                         clearInterval(interval);
                         status.innerText = "❌ Generation failed on the server model.";
-                        status.style.color = "var(--pink-error)";
+                        status.style.color = "#ec4899";
                     }
                 } catch (e) {
                     console.error(e);
