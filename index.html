@@ -1,37 +1,33 @@
-<script> function pollJobStatus(taskId) {
+<script>
+async function pollJobStatus(taskId) {
     const maxAttempts = 30;
     let attempts = 0;
 
     const interval = setInterval(async () => {
         attempts++;
         try {
-            // Updated to match your backend route: /api/job-status/:id
             const response = await fetch(`/api/job-status/${taskId}`);
             const data = await response.json();
 
             console.log("Status check response:", data);
 
-            // Checks if the job is finished (adjust 'completed' if your API uses a different status word like 'SUCCESS')
             if (data.status === 'completed' || data.status === 'SUCCESS' || data.audio_url || data.url) {
                 clearInterval(interval);
                 
-                // Safely find the audio URL across different possible keys
                 const audioUrl = data.audio_url || data.url || data.output_url || (data.data && data.data.audio_url);
 
                 if (audioUrl) {
                     console.log("Audio URL found:", audioUrl);
-                    // Load the audio into your player
-                    playAudio(audioUrl);
-                } else {
-                    console.error("Job completed but audio URL is missing from response.");
+                    if (typeof playAudio === 'function') {
+                        playAudio(audioUrl);
+                    }
                 }
             } else if (data.status === 'failed' || attempts >= maxAttempts) {
                 clearInterval(interval);
-                console.error("Generation failed or timed out.");
             }
         } catch (error) {
             console.error("Polling error:", error);
         }
-    }, 4000); // Polls every 4 seconds
+    }, 4000);
 }
 </script>
