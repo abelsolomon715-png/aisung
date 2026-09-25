@@ -1,4 +1,4 @@
-async function pollJobStatus(taskId) {
+<script> function pollJobStatus(taskId) {
     const maxAttempts = 30;
     let attempts = 0;
 
@@ -34,3 +34,4 @@ async function pollJobStatus(taskId) {
         }
     }, 4000); // Polls every 4 seconds
 }
+</script>
