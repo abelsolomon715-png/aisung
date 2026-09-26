@@ -1,26 +1,117 @@
-// Example modification for your frontend event listener
-async function triggerTrackGeneration() {
-    const payload = {
-        genre: currentSelectedGenre,       // e.g., "Latin & Reggaeton"
-        subGenre: currentSelectedSubGenre, // e.g., "Dembow"
-        isInstrumental: instrumentalToggle.checked, // true/false
-        youtubeUrl: youtubeInputField.value || null // string or null
-    };
-
-    try {
-        const response = await fetch('/api/generate-track', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const trackJob = await response.json();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AISUNG - Global AI Music Engine</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #121212; color: #ffffff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 500px; w-index: 100%; width: 100%; display: flex; flex-direction: column; gap: 15px; background: #1e1e1e; padding: 20px; border-radius: 12px; box-sizing: border-box; }
+        h1 { margin: 0 0 10px 0; text-align: center; color: #ff4757; }
+        label { font-weight: bold; font-size: 14px; margin-bottom: -5px; display: block; color: #aaa; }
+        select, input[type="text"] { width: 100%; padding: 12px; border: 1px solid #333; background: #2a2a2a; color: white; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; padding: 12px; border-radius: 8px; }
+        .btn { width: 100%; background: #ff4757; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn:hover { background: #ff6b81; }
+        audio { width: 100%; margin-top: 10px; }
+        #status { text-align: center; font-size: 14px; color: #00ff88; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AISUNG</h1>
         
-        // Access structural task tracking IDs correctly depending on Apiframe response layout
-        const taskId = trackJob.jobId || trackJob.id || (trackJob.data && trackJob.data.id);
-        if (taskId) {
-            pollJobStatus(taskId);
+        <label>Select Main Genre</label>
+        <select id="genreSelect">
+            <option value="Pop & Commercial">Pop & Commercial</option>
+            <option value="Hip Hop & Trap">Hip Hop & Trap</option>
+            <option value="R&B & Soul">R&B & Soul</option>
+            <option value="Rock & Alternative">Rock & Alternative</option>
+            <option value="Latin & Reggaeton">Latin & Reggaeton</option>
+            <option value="African & Afrobeats">African & Afrobeats</option>
+        </select>
+
+        <label>Select Sub-Genre</label>
+        <select id="subGenreSelect">
+            <option value="Modern Trap">Modern Trap</option>
+            <option value="Synth-Pop">Synth-Pop</option>
+            <option value="Contemporary R&B">Contemporary R&B</option>
+            <option value="Dembow">Dembow</option>
+            <option value="Afrobeats">Afrobeats</option>
+            <option value="Alternative Rock">Alternative Rock</option>
+        </select>
+
+        <label>YouTube Reference Link (Optional)</label>
+        <input type="text" id="youtubeInput" placeholder="Paste YouTube link here...">
+
+        <div class="toggle-container">
+            <span>Instrumental Only</span>
+            <input type="checkbox" id="instrumentalToggle" style="transform: scale(1.3);">
+        </div>
+
+        <button class="btn" onclick="triggerTrackGeneration()">GENERATE AI TRACK</button>
+        <div id="status"></div>
+        <audio id="audioPlayer" controls style="display:none;"></audio>
+    </div>
+
+    <script>
+        function playAudio(url) {
+            const player = document.getElementById('audioPlayer');
+            player.src = url;
+            player.style.display = 'block';
+            player.play();
+            document.getElementById('status').innerText = "Playing track!";
         }
-    } catch (error) {
-        console.error("Failed to kick off generation:", error);
-    }
-}
+
+        async function pollJobStatus(taskId) {
+            let attempts = 0;
+            const interval = setInterval(async () => {
+                attempts++;
+                document.getElementById('status').innerText = `Generating melody... (Checking state: ${attempts})`;
+                try {
+                    const response = await fetch(`/api/job-status/${taskId}`);
+                    const data = await response.json();
+                    
+                    if (data.status === 'completed' || data.status === 'SUCCESS' || data.audio_url || data.url) {
+                        clearInterval(interval);
+                        const audioUrl = data.audio_url || data.url || data.output_url || (data.data && data.data.audio_url);
+                        if (audioUrl) playAudio(audioUrl);
+                    } else if (data.status === 'failed' || attempts >= 40) {
+                        clearInterval(interval);
+                        document.getElementById('status').innerText = "Generation failed. Try another style.";
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            }, 4000);
+        }
+
+        async function triggerTrackGeneration() {
+            document.getElementById('status').innerText = "Connecting to Gemini Engine...";
+            const payload = {
+                genre: document.getElementById('genreSelect').value,
+                subGenre: document.getElementById('subGenreSelect').value,
+                isInstrumental: document.getElementById('instrumentalToggle').checked,
+                youtubeUrl: document.getElementById('youtubeInput').value || null
+            };
+
+            try {
+                const response = await fetch('/api/generate-track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const trackJob = await response.json();
+                const taskId = trackJob.jobId || trackJob.id || (trackJob.data && trackJob.data.id);
+                if (taskId) {
+                    pollJobStatus(taskId);
+                } else {
+                    document.getElementById('status').innerText = "System busy. Click generate again.";
+                }
+            } catch (error) {
+                document.getElementById('status').innerText = "Server connection lost.";
+            }
+        }
+    </script>
+</body>
+</html>
