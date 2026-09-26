@@ -1,14 +1,12 @@
 {
-    "name": "aisung-music-app",
-      "version": "1.0.0",
-        "main": "server.js",
-          "scripts": {
-              "start": "node server.js"
-                },
-                  "dependencies": {
-                      "@google/genai": "*",
-                          "express": "^4.19.2"
-                            }
-                            }
-                            
+  "name": "aisung-music-app",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/genai": "*",
+    "express": "^4.19.2"
+  }
 }
