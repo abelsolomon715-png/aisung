@@ -43,6 +43,8 @@ app.post('/api/generate-track', async (req, res) => {
         console.log("Gemini Orchestrated Prompt Target:", refinedPrompt);
 
         const apiKey = process.env.APIFRAME_API_KEY;
+        
+        // Aligned perfectly to Apiframe's strict V2 API documentation payload requirements
         const apiframeResponse = await fetch('https://apiframe.ai', {
             method: 'POST',
             headers: {
@@ -52,13 +54,18 @@ app.post('/api/generate-track', async (req, res) => {
             body: JSON.stringify({
                 prompt: refinedPrompt,
                 model: 'suno',
-                lyrics: isInstrumental ? "[Instrumental Track]" : "", 
-                sunoParams: { model_version: 'V4_5PLUS' }
+                title: `${subGenre} Creation`,
+                custom: true,
+                lyrics: isInstrumental ? "[Instrumental Track]" : " [Verse 1] Built automatically by AISUNG engine.", 
+                sunoParams: { 
+                    model_version: 'V4_5PLUS',
+                    tags: refinedPrompt
+                }
             })
         });
 
         const data = await apiframeResponse.json();
-        // Return full raw data back to client tracking functions
+        console.log("Apiframe Outgoing Response:", data);
         res.json(data); 
     } catch (error) {
         console.error("Backend pipeline error:", error);
