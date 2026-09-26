@@ -44,28 +44,26 @@ app.post('/api/generate-track', async (req, res) => {
 
         const apiKey = process.env.APIFRAME_API_KEY;
         
-        // Aligned perfectly to Apiframe's strict V2 API documentation payload requirements
+        // Aligned perfectly to the raw Apiframe V2 documentation layout properties
+        const payloadBody = {
+            model: "suno",
+            prompt: refinedPrompt,
+            custom: true,
+            title: `${subGenre} Style Creation`,
+            lyrics: isInstrumental ? "[Instrumental Track]" : "[Verse 1]\nGenerated beautifully by AISUNG engine."
+        };
+
         const apiframeResponse = await fetch('https://apiframe.ai', {
             method: 'POST',
             headers: {
                 'X-API-Key': apiKey,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                prompt: refinedPrompt,
-                model: 'suno',
-                title: `${subGenre} Creation`,
-                custom: true,
-                lyrics: isInstrumental ? "[Instrumental Track]" : " [Verse 1] Built automatically by AISUNG engine.", 
-                sunoParams: { 
-                    model_version: 'V4_5PLUS',
-                    tags: refinedPrompt
-                }
-            })
+            body: JSON.stringify(payloadBody)
         });
 
         const data = await apiframeResponse.json();
-        console.log("Apiframe Outgoing Response:", data);
+        console.log("Apiframe Outgoing Response Object:", data);
         res.json(data); 
     } catch (error) {
         console.error("Backend pipeline error:", error);
