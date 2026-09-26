@@ -1,11 +1,13 @@
 const express = require('express');
 const path = require('path');
-const { GoogleGenAI } = require('@google/generative-ai'); 
+// Import the Google Gen AI SDK correctly
+const { GoogleGenerativeAI } = require('@google/generative-ai'); 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Initialize the API using the correct method name
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -33,13 +35,14 @@ app.post('/api/generate-track', async (req, res) => {
             userPrompt += ` Match the general production tempo, atmospheric mood, and arrangement vibe of this track metadata placeholder: ${youtubeUrl}.`;
         }
 
-        const aiResponse = await ai.models.generateContent({
+        // Get the model correctly based on the new library layout
+        const model = genAI.getGenerativeModel({ 
             model: 'gemini-2.5-flash',
-            contents: userPrompt,
-            config: { systemInstruction: systemPrompt }
+            systemInstruction: systemPrompt
         });
 
-        const refinedPrompt = aiResponse.text.trim();
+        const aiResponse = await model.generateContent(userPrompt);
+        const refinedPrompt = aiResponse.response.text().trim();
         console.log("Gemini Orchestrated Prompt Target:", refinedPrompt);
 
         const apiKey = process.env.APIFRAME_API_KEY;
