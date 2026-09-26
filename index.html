@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AISUNG - Global AI Music Engine</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #121212; color: #ffffff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 500px; w-index: 100%; width: 100%; display: flex; flex-direction: column; gap: 15px; background: #1e1e1e; padding: 20px; border-radius: 12px; box-sizing: border-box; }
-        h1 { margin: 0 0 10px 0; text-align: center; color: #ff4757; }
-        label { font-weight: bold; font-size: 14px; margin-bottom: -5px; display: block; color: #aaa; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #ffffff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 500px; width: 100%; display: flex; flex-direction: column; gap: 15px; background: #1e1e1e; padding: 20px; border-radius: 12px; box-sizing: border-box; }
+        h1 { margin: 0 0 10px 0; text-align: center; color: #ff4757; letter-spacing: 2px; }
+        label { font-weight: bold; font-size: 14px; color: #aaa; }
         select, input[type="text"] { width: 100%; padding: 12px; border: 1px solid #333; background: #2a2a2a; color: white; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .toggle-container { display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; padding: 12px; border-radius: 8px; }
         .btn { width: 100%; background: #ff4757; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
         .btn:hover { background: #ff6b81; }
-        audio { width: 100%; margin-top: 10px; }
-        #status { text-align: center; font-size: 14px; color: #00ff88; }
+        audio { width: 100%; margin-top: 15px; }
+        #status { text-align: center; font-size: 14px; color: #00ff88; font-weight: 500; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -33,11 +33,11 @@
 
         <label>Select Sub-Genre</label>
         <select id="subGenreSelect">
+            <option value="Afrobeats">Afrobeats</option>
             <option value="Modern Trap">Modern Trap</option>
             <option value="Synth-Pop">Synth-Pop</option>
             <option value="Contemporary R&B">Contemporary R&B</option>
             <option value="Dembow">Dembow</option>
-            <option value="Afrobeats">Afrobeats</option>
             <option value="Alternative Rock">Alternative Rock</option>
         </select>
 
@@ -60,34 +60,41 @@
             player.src = url;
             player.style.display = 'block';
             player.play();
-            document.getElementById('status').innerText = "Playing track!";
+            document.getElementById('status').innerText = "Track Generation Success!";
         }
 
         async function pollJobStatus(taskId) {
             let attempts = 0;
             const interval = setInterval(async () => {
                 attempts++;
-                document.getElementById('status').innerText = `Generating melody... (Checking state: ${attempts})`;
+                document.getElementById('status').innerText = `Generating audio... (Polling: ${attempts}/40)`;
                 try {
                     const response = await fetch(`/api/job-status/${taskId}`);
                     const data = await response.json();
                     
-                    if (data.status === 'completed' || data.status === 'SUCCESS' || data.audio_url || data.url) {
+                    // Add robust fallback validation for handling raw object states
+                    const currentStatus = data.status || (data.data && data.data.status);
+                    const audioUrl = data.audio_url || data.url || data.output_url || (data.data && data.data.audio_url);
+
+                    if (currentStatus === 'completed' || currentStatus === 'SUCCESS' || audioUrl) {
                         clearInterval(interval);
-                        const audioUrl = data.audio_url || data.url || data.output_url || (data.data && data.data.audio_url);
-                        if (audioUrl) playAudio(audioUrl);
-                    } else if (data.status === 'failed' || attempts >= 40) {
+                        if (audioUrl) {
+                            playAudio(audioUrl);
+                        } else {
+                            document.getElementById('status').innerText = "Processing completed. Refreshing link...";
+                        }
+                    } else if (currentStatus === 'failed' || attempts >= 40) {
                         clearInterval(interval);
-                        document.getElementById('status').innerText = "Generation failed. Try another style.";
+                        document.getElementById('status').innerText = "Generation timeout. Choose a different style.";
                     }
                 } catch (error) {
-                    console.error(error);
+                    console.error("Polling mismatch:", error);
                 }
-            }, 4000);
+            }, 5000);
         }
 
         async function triggerTrackGeneration() {
-            document.getElementById('status').innerText = "Connecting to Gemini Engine...";
+            document.getElementById('status').innerText = "Processing prompt via Gemini middleware...";
             const payload = {
                 genre: document.getElementById('genreSelect').value,
                 subGenre: document.getElementById('subGenreSelect').value,
@@ -102,14 +109,17 @@
                     body: JSON.stringify(payload)
                 });
                 const trackJob = await response.json();
-                const taskId = trackJob.jobId || trackJob.id || (trackJob.data && trackJob.data.id);
+                
+                // Track dynamic structural task variables sent from Apiframe
+                const taskId = trackJob.jobId || trackJob.id || trackJob.task_id || (trackJob.data && (trackJob.data.id || trackJob.data.task_id));
+                
                 if (taskId) {
                     pollJobStatus(taskId);
                 } else {
-                    document.getElementById('status').innerText = "System busy. Click generate again.";
+                    document.getElementById('status').innerText = "API Limit hit or parameters invalid. Retry.";
                 }
             } catch (error) {
-                document.getElementById('status').innerText = "Server connection lost.";
+                document.getElementById('status').innerText = "Network pipeline error.";
             }
         }
     </script>
