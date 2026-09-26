@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: aisung-app
-    runtime: node
-    buildCommand: npm install
-    startCommand: node server.js
