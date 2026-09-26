@@ -1,33 +1,26 @@
-<script>
-async function pollJobStatus(taskId) {
-    const maxAttempts = 30;
-    let attempts = 0;
+// Example modification for your frontend event listener
+async function triggerTrackGeneration() {
+    const payload = {
+        genre: currentSelectedGenre,       // e.g., "Latin & Reggaeton"
+        subGenre: currentSelectedSubGenre, // e.g., "Dembow"
+        isInstrumental: instrumentalToggle.checked, // true/false
+        youtubeUrl: youtubeInputField.value || null // string or null
+    };
 
-    const interval = setInterval(async () => {
-        attempts++;
-        try {
-            const response = await fetch(`/api/job-status/${taskId}`);
-            const data = await response.json();
-
-            console.log("Status check response:", data);
-
-            if (data.status === 'completed' || data.status === 'SUCCESS' || data.audio_url || data.url) {
-                clearInterval(interval);
-                
-                const audioUrl = data.audio_url || data.url || data.output_url || (data.data && data.data.audio_url);
-
-                if (audioUrl) {
-                    console.log("Audio URL found:", audioUrl);
-                    if (typeof playAudio === 'function') {
-                        playAudio(audioUrl);
-                    }
-                }
-            } else if (data.status === 'failed' || attempts >= maxAttempts) {
-                clearInterval(interval);
-            }
-        } catch (error) {
-            console.error("Polling error:", error);
+    try {
+        const response = await fetch('/api/generate-track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const trackJob = await response.json();
+        
+        // Access structural task tracking IDs correctly depending on Apiframe response layout
+        const taskId = trackJob.jobId || trackJob.id || (trackJob.data && trackJob.data.id);
+        if (taskId) {
+            pollJobStatus(taskId);
         }
-    }, 4000);
+    } catch (error) {
+        console.error("Failed to kick off generation:", error);
+    }
 }
-</script>
