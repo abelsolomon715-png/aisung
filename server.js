@@ -1,12 +1,10 @@
 const express = require('express');
 const path = require('path');
-// Import the Google Gen AI SDK correctly
 const { GoogleGenerativeAI } = require('@google/generative-ai'); 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize the API using the correct method name
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.use(express.json());
@@ -35,7 +33,6 @@ app.post('/api/generate-track', async (req, res) => {
             userPrompt += ` Match the general production tempo, atmospheric mood, and arrangement vibe of this track metadata placeholder: ${youtubeUrl}.`;
         }
 
-        // Get the model correctly based on the new library layout
         const model = genAI.getGenerativeModel({ 
             model: 'gemini-2.5-flash',
             systemInstruction: systemPrompt
@@ -61,7 +58,8 @@ app.post('/api/generate-track', async (req, res) => {
         });
 
         const data = await apiframeResponse.json();
-        res.json(data);
+        // Return full raw data back to client tracking functions
+        res.json(data); 
     } catch (error) {
         console.error("Backend pipeline error:", error);
         res.status(500).json({ error: error.message });
