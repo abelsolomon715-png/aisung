@@ -1,12 +1,13 @@
 {
-  "name": "aisung-ai-musika",
+  "name": "aisung-music-app",
   "version": "1.0.0",
-  "description": "AISUNG AI Musika Prompt Engine",
+  "description": "AI Automated Global Music Generation App",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "@google/genai": "^0.1.1",
     "express": "^4.19.2"
   }
 }
