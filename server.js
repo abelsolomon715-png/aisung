@@ -16,7 +16,6 @@ app.get('/', (req, res) => {
 
 app.post('/api/generate-track', async (req, res) => {
     try {
-        // Enforcing safe fallback parameters to block undefined variables
         const genre = req.body.genre || "Pop";
         const subGenre = req.body.subGenre || "Synth-Pop";
         const isInstrumental = req.body.isInstrumental || false;
@@ -48,13 +47,12 @@ app.post('/api/generate-track', async (req, res) => {
 
         const apiKey = process.env.APIFRAME_API_KEY;
 
+        // Fully aligned to the official Apiframe text-to-music Suno guide layout
         const payloadBody = {
-            model: "suno",
             prompt: refinedPrompt,
-            sunoParams: {
-                model_version: "V4_5PLUS",
-                style: refinedPrompt
-            }
+            model: "suno",
+            model_version: "V4_5PLUS",
+            style: refinedPrompt
         };
 
         const apiframeResponse = await fetch('https://api.apiframe.ai/v2/music/generate', {
@@ -68,7 +66,17 @@ app.post('/api/generate-track', async (req, res) => {
 
         const data = await apiframeResponse.json();
         console.log("Apiframe Outgoing Response:", data);
-        res.json(data); 
+        
+        // Safety Fallback: If Apiframe returns a nested object data layer, lift it up
+        if (data && data.data) {
+            res.json({
+                task_id: data.task_id || data.data.task_id || data.id || data.data.id,
+                status: data.status || data.data.status,
+                audio_url: data.audio_url || data.data.audio_url || data.url || data.data.url
+            });
+        } else {
+            res.json(data);
+        }
     } catch (error) {
         console.error("Backend pipeline error:", error);
         res.status(500).json({ error: error.message });
