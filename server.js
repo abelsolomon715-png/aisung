@@ -27,7 +27,7 @@ app.post('/api/generate-track', async (req, res) => {
         let userPrompt = `Genre: ${genre}, Sub-Genre: ${subGenre}.`;
         
         if (isInstrumental) {
-            systemPrompt += ` CRITICAL: The user requested an instrumental track. You must absolutely exclude vocals. Add tags like: pure instrumental, no singing, no vocals, zero voices, crisp acoustics. Do not mention vocal techniques like chants or singing.`;
+            systemPrompt += ` CRITICAL: The user requested an instrumental track. You must absolutely exclude vocals. Add tags like: pure instrumental, no singing, no vocals, zero voices, crisp acoustics. Do not mention vocal techniques like: chants, vocals, chorus, verses, singing, singing voice.`;
         } else {
             systemPrompt += ` Optimize for pristine studio vocal presence, perfect pitch alignment, and high-fidelity vocal delivery matching the specified genre space.`;
         }
@@ -47,7 +47,7 @@ app.post('/api/generate-track', async (req, res) => {
 
         const apiKey = process.env.APIFRAME_API_KEY;
 
-        // Perfectly structured body matching Apiframe's official description mode documentation
+        // Perfectly structured body matching Apiframe's exact v2/music/generate documentation specifications
         const payloadBody = {
             model: "suno",
             prompt: refinedPrompt,
@@ -80,7 +80,6 @@ app.get('/api/job-status/:id', async (req, res) => {
         const jobId = req.params.id;
         const apiKey = process.env.APIFRAME_API_KEY;
 
-        // Corrected jobs URL structure matching the base registry specs
         const response = await fetch(`https://apiframe.ai{jobId}`, {
             method: 'GET',
             headers: { 'X-API-Key': apiKey }
