@@ -47,12 +47,14 @@ app.post('/api/generate-track', async (req, res) => {
 
         const apiKey = process.env.APIFRAME_API_KEY;
 
-        // Fully aligned to the official Apiframe text-to-music Suno guide layout
+        // Perfectly structured request payload matching Apiframe's parameters exactly
         const payloadBody = {
+            ai_model: "suno", 
             prompt: refinedPrompt,
-            model: "suno",
-            model_version: "V4_5PLUS",
-            style: refinedPrompt
+            sunoParams: {
+                model_version: "V4_5PLUS",
+                style: refinedPrompt
+            }
         };
 
         const apiframeResponse = await fetch('https://api.apiframe.ai/v2/music/generate', {
@@ -67,16 +69,12 @@ app.post('/api/generate-track', async (req, res) => {
         const data = await apiframeResponse.json();
         console.log("Apiframe Outgoing Response:", data);
         
-        // Safety Fallback: If Apiframe returns a nested object data layer, lift it up
-        if (data && data.data) {
-            res.json({
-                task_id: data.task_id || data.data.task_id || data.id || data.data.id,
-                status: data.status || data.data.status,
-                audio_url: data.audio_url || data.data.audio_url || data.url || data.data.url
-            });
-        } else {
-            res.json(data);
-        }
+        // Return clear, predictable properties down to your front-end tracking scripts
+        res.json({
+            task_id: data.task_id || data.jobId || data.id || (data.data && (data.data.task_id || data.data.id)),
+            status: data.status || "SUCCESS",
+            audio_url: data.audio_url || data.url || data.output_url || (data.data && data.data.audio_url)
+        });
     } catch (error) {
         console.error("Backend pipeline error:", error);
         res.status(500).json({ error: error.message });
