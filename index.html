@@ -72,6 +72,7 @@
                     const response = await fetch(`/api/job-status/${taskId}`);
                     const data = await response.json();
                     
+                    // Aligned to map both top-level and nested Apiframe data responses securely
                     const currentStatus = data.status || (data.data && data.data.status);
                     const audioUrl = data.audio_url || data.url || data.output_url || (data.data && data.data.audio_url);
 
@@ -109,12 +110,14 @@
                 });
                 const trackJob = await response.json();
                 
-                const taskId = trackJob.jobId || trackJob.id || trackJob.task_id || (trackJob.data && (trackJob.data.id || trackJob.data.task_id));
+                // Explicitly targeting Apiframe's official nested V2 data.task_id layout schema maps
+                const taskId = trackJob.task_id || trackJob.jobId || trackJob.id || 
+                               (trackJob.data && (trackJob.data.task_id || trackJob.data.id));
                 
                 if (taskId) {
                     pollJobStatus(taskId);
                 } else {
-                    document.getElementById('status').innerText = "Server response invalid. Retrying...";
+                    document.getElementById('status').innerText = "Server configuration error. Checking variables...";
                 }
             } catch (error) {
                 document.getElementById('status').innerText = "Network pipeline error.";
