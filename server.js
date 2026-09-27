@@ -27,7 +27,7 @@ app.post('/api/generate-track', async (req, res) => {
         let userPrompt = `Genre: ${genre}, Sub-Genre: ${subGenre}.`;
         
         if (isInstrumental) {
-            systemPrompt += ` CRITICAL: The user requested an instrumental track. You must absolutely exclude vocals. Add tags like: pure instrumental, no singing, no vocals, zero voices, crisp acoustics. Do not mention vocal techniques like: chants, vocals, chorus, verses, singing, singing voice.`;
+            systemPrompt += ` CRITICAL: The user requested an instrumental track. You must absolutely exclude vocals. Add tags like: pure instrumental, no singing, no vocals, zero voices, crisp acoustics.`;
         } else {
             systemPrompt += ` Optimize for pristine studio vocal presence, perfect pitch alignment, and high-fidelity vocal delivery matching the specified genre space.`;
         }
@@ -47,17 +47,19 @@ app.post('/api/generate-track', async (req, res) => {
 
         const apiKey = process.env.APIFRAME_API_KEY;
 
-        // Perfectly structured body matching Apiframe's exact v2/music/generate documentation specifications
+        // Structured exactly to match the official Apiframe V2 text-to-music Suno specifications
         const payloadBody = {
             model: "suno",
-            prompt: refinedPrompt,
+            prompt: isInstrumental ? "A pure acoustic instrumental track matching the style" : "An original song with studio vocals matching the style",
+            custom_mode: false,
             sunoParams: {
                 model_version: "V4_5PLUS",
-                style: refinedPrompt
+                style: refinedPrompt,
+                instrumental: isInstrumental
             }
         };
 
-        const apiframeResponse = await fetch('https://api.apiframe.ai/v2/music/generate', {
+        const apiframeResponse = await fetch('https://apiframe.ai', {
             method: 'POST',
             headers: {
                 'X-API-Key': apiKey,
