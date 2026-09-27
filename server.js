@@ -21,19 +21,20 @@ app.post('/api/generate-track', async (req, res) => {
         const isInstrumental = req.body.isInstrumental || false;
         const youtubeUrl = req.body.youtubeUrl || null;
         
-        let systemPrompt = `You are a music engineering system. Convert this raw genre input into precise music style tags for a text-to-audio API. 
-        Output ONLY a comma-separated list of technical studio tags (instruments, mood, mixing specs, bpm). No conversational text, no explanations.`;
+        // Strict command structure enforcing the 100-character cap limit
+        let systemPrompt = `You are a music generator. Convert the user input into a short, comma-separated list of studio style tags.
+        CRITICAL: The entire output must be extremely short—under 100 characters total. No full sentences, no explanations, just raw tags.`;
         
-        let userPrompt = `Genre: ${genre}, Sub-Genre: ${subGenre}.`;
+        let userPrompt = `Style: ${subGenre} ${genre}.`;
         
         if (isInstrumental) {
-            systemPrompt += ` CRITICAL: The user requested an instrumental track. You must absolutely exclude vocals. Add tags like: pure instrumental, no singing, no vocals, zero voices, crisp acoustics.`;
+            systemPrompt += ` Force instrumental track, strictly zero vocals, no singing.`;
         } else {
-            systemPrompt += ` Optimize for pristine studio vocal presence, perfect pitch alignment, and high-fidelity vocal delivery matching the specified genre space.`;
+            systemPrompt += ` Include clean studio vocals.`;
         }
 
         if (youtubeUrl) {
-            userPrompt += ` Match the general production tempo, atmospheric mood, and arrangement vibe of this track metadata placeholder: ${youtubeUrl}.`;
+            userPrompt += ` Match the general mood/tempo of: ${youtubeUrl}.`;
         }
 
         const model = genAI.getGenerativeModel({ 
@@ -42,20 +43,23 @@ app.post('/api/generate-track', async (req, res) => {
         });
 
         const aiResponse = await model.generateContent(userPrompt);
-        const refinedPrompt = aiResponse.response.text().trim();
-        console.log("Gemini Orchestrated Prompt Target:", refinedPrompt);
+        let refinedPrompt = aiResponse.response.text().trim();
+        
+        // Safety insurance: Hard chop the string at 110 characters just in case the AI goes over
+        if (refinedPrompt.length > 110) {
+            refinedPrompt = refinedPrompt.substring(0, 110);
+        }
+        console.log("Gemini Output Prompt (Character Guard Active):", refinedPrompt);
 
         const apiKey = process.env.APIFRAME_API_KEY;
 
-        // Structured exactly to match the official Apiframe V2 text-to-music Suno specifications
+        // Perfectly structured body matching Apiframe's current V2 requirements
         const payloadBody = {
             model: "suno",
-            prompt: isInstrumental ? "A pure acoustic instrumental track matching the style" : "An original song with studio vocals matching the style",
-            custom_mode: false,
+            prompt: refinedPrompt,
             sunoParams: {
                 model_version: "V4_5PLUS",
-                style: refinedPrompt,
-                instrumental: isInstrumental
+                style: refinedPrompt
             }
         };
 
