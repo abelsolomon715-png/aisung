@@ -16,7 +16,11 @@ app.get('/', (req, res) => {
 
 app.post('/api/generate-track', async (req, res) => {
     try {
-        const { genre, subGenre, isInstrumental, youtubeUrl } = req.body;
+        // Enforcing safe fallback parameters to block undefined variables
+        const genre = req.body.genre || "Pop";
+        const subGenre = req.body.subGenre || "Synth-Pop";
+        const isInstrumental = req.body.isInstrumental || false;
+        const youtubeUrl = req.body.youtubeUrl || null;
         
         let systemPrompt = `You are a music engineering system. Convert this raw genre input into precise music style tags for a text-to-audio API. 
         Output ONLY a comma-separated list of technical studio tags (instruments, mood, mixing specs, bpm). No conversational text, no explanations.`;
@@ -44,7 +48,6 @@ app.post('/api/generate-track', async (req, res) => {
 
         const apiKey = process.env.APIFRAME_API_KEY;
 
-        // Perfectly structured request wrapper matching the exact documentation syntax
         const payloadBody = {
             model: "suno",
             prompt: refinedPrompt,
@@ -54,7 +57,7 @@ app.post('/api/generate-track', async (req, res) => {
             }
         };
 
-        const apiframeResponse = await fetch('https://apiframe.ai', {
+        const apiframeResponse = await fetch('https://api.apiframe.ai/v2/music/generate', {
             method: 'POST',
             headers: {
                 'X-API-Key': apiKey,
