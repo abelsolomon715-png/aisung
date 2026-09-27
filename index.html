@@ -72,7 +72,6 @@
                     const response = await fetch(`/api/job-status/${taskId}`);
                     const data = await response.json();
                     
-                    // Aligned to map both top-level and nested Apiframe data responses securely
                     const currentStatus = data.status || (data.data && data.data.status);
                     const audioUrl = data.audio_url || data.url || data.output_url || (data.data && data.data.audio_url);
 
@@ -81,25 +80,32 @@
                         if (audioUrl) {
                             playAudio(audioUrl);
                         } else {
-                            document.getElementById('status').innerText = "Processing completed. Loading stream...";
+                            document.getElementById('status').innerText = "Processing completed. Loading track stream...";
                         }
                     } else if (currentStatus === 'failed' || attempts >= 40) {
                         clearInterval(interval);
                         document.getElementById('status').innerText = "Generation timeout. Choose a different style.";
                     }
                 } catch (error) {
-                    console.error("Polling error:", error);
+                    console.error("Polling mismatch error:", error);
                 }
             }, 5000);
         }
 
         async function triggerTrackGeneration() {
             document.getElementById('status').innerText = "Processing prompt via Gemini middleware...";
+            
+            // Explicitly linking frontend selector strings to avoid undefined variables
+            const genreValue = document.getElementById('genreSelect').value;
+            const subGenreValue = document.getElementById('subGenreSelect').value;
+            const isInstrumentalValue = document.getElementById('instrumentalToggle').checked;
+            const youtubeUrlValue = document.getElementById('youtubeInput').value || null;
+
             const payload = {
-                genre: document.getElementById('genreSelect').value,
-                subGenre: document.getElementById('subGenreSelect').value,
-                isInstrumental: document.getElementById('instrumentalToggle').checked,
-                youtubeUrl: document.getElementById('youtubeInput').value || null
+                genre: genreValue,
+                subGenre: subGenreValue,
+                isInstrumental: isInstrumentalValue,
+                youtubeUrl: youtubeUrlValue
             };
 
             try {
@@ -108,9 +114,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                
                 const trackJob = await response.json();
                 
-                // Explicitly targeting Apiframe's official nested V2 data.task_id layout schema maps
+                // Track dynamic structural task variables sent from Apiframe
                 const taskId = trackJob.task_id || trackJob.jobId || trackJob.id || 
                                (trackJob.data && (trackJob.data.task_id || trackJob.data.id));
                 
@@ -120,7 +127,7 @@
                     document.getElementById('status').innerText = "Server configuration error. Checking variables...";
                 }
             } catch (error) {
-                document.getElementById('status').innerText = "Network pipeline error.";
+                document.getElementById('status').innerText = "Network pipeline connection error.";
             }
         }
     </script>
