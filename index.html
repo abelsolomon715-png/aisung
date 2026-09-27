@@ -111,14 +111,14 @@
                 const trackJob = await response.json();
                 
                 // Track dynamic structural task variables sent from Apiframe
-                const taskId = trackJob.jobId || trackJob.id || trackJob.task_id || (trackJob.data && (trackJob.data.id || trackJob.data.task_id));
+                                const taskId = trackJob.jobId || trackJob.id || trackJob.task_id || (trackJob.data && (trackJob.data.id || trackJob.data.task_id));
                 
                 if (taskId) {
                     pollJobStatus(taskId);
                 } else {
-                    document.getElementById('status').innerText = "API Limit hit or parameters invalid. Retry.";
+                    document.getElementById('status').innerText = "NEW BUILD LOADING: Click generate once more.";
                 }
-            } catch (error) {
+
                 document.getElementById('status').innerText = "Network pipeline error.";
             }
         }
