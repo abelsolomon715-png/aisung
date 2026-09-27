@@ -72,7 +72,6 @@
                     const response = await fetch(`/api/job-status/${taskId}`);
                     const data = await response.json();
                     
-                    // Add robust fallback validation for handling raw object states
                     const currentStatus = data.status || (data.data && data.data.status);
                     const audioUrl = data.audio_url || data.url || data.output_url || (data.data && data.data.audio_url);
 
@@ -81,14 +80,14 @@
                         if (audioUrl) {
                             playAudio(audioUrl);
                         } else {
-                            document.getElementById('status').innerText = "Processing completed. Refreshing link...";
+                            document.getElementById('status').innerText = "Processing completed. Loading stream...";
                         }
                     } else if (currentStatus === 'failed' || attempts >= 40) {
                         clearInterval(interval);
                         document.getElementById('status').innerText = "Generation timeout. Choose a different style.";
                     }
                 } catch (error) {
-                    console.error("Polling mismatch:", error);
+                    console.error("Polling error:", error);
                 }
             }, 5000);
         }
@@ -110,15 +109,14 @@
                 });
                 const trackJob = await response.json();
                 
-                // Track dynamic structural task variables sent from Apiframe
-                                const taskId = trackJob.jobId || trackJob.id || trackJob.task_id || (trackJob.data && (trackJob.data.id || trackJob.data.task_id));
+                const taskId = trackJob.jobId || trackJob.id || trackJob.task_id || (trackJob.data && (trackJob.data.id || trackJob.data.task_id));
                 
                 if (taskId) {
                     pollJobStatus(taskId);
                 } else {
-                    document.getElementById('status').innerText = "NEW BUILD LOADING: Click generate once more.";
+                    document.getElementById('status').innerText = "Server response invalid. Retrying...";
                 }
-
+            } catch (error) {
                 document.getElementById('status').innerText = "Network pipeline error.";
             }
         }
