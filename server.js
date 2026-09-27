@@ -47,20 +47,20 @@ app.post('/api/generate-track', async (req, res) => {
 
         const apiKey = process.env.APIFRAME_API_KEY;
 
-        // Perfectly aligned to the required Apiframe Text-to-Music JSON requirements
+        // Perfectly structured body matching Apiframe's official description mode documentation
         const payloadBody = {
-            prompt: refinedPrompt,
             model: "suno",
-            model_version: "V4_5PLUS",
-            style: refinedPrompt
+            prompt: refinedPrompt,
+            sunoParams: {
+                model_version: "V4_5PLUS",
+                style: refinedPrompt
+            }
         };
 
-        const apiframeResponse = await fetch('https://apiframe.ai', {
+        const apiframeResponse = await fetch('https://api.apiframe.ai/v2/music/generate', {
             method: 'POST',
             headers: {
-                // Dual authentication tokens to ensure total compatibility across V2 registries
                 'X-API-Key': apiKey,
-                'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payloadBody)
@@ -68,13 +68,7 @@ app.post('/api/generate-track', async (req, res) => {
 
         const data = await apiframeResponse.json();
         console.log("Apiframe Outgoing Response:", data);
-        
-        // Dynamic variable checking mapping fields accurately
-        res.json({
-            task_id: data.task_id || data.jobId || data.id || (data.data && (data.data.task_id || data.data.id)),
-            status: data.status || "SUCCESS",
-            audio_url: data.audio_url || data.url || data.output_url || (data.data && data.data.audio_url)
-        });
+        res.json(data); 
     } catch (error) {
         console.error("Backend pipeline error:", error);
         res.status(500).json({ error: error.message });
@@ -86,12 +80,10 @@ app.get('/api/job-status/:id', async (req, res) => {
         const jobId = req.params.id;
         const apiKey = process.env.APIFRAME_API_KEY;
 
+        // Corrected jobs URL structure matching the base registry specs
         const response = await fetch(`https://apiframe.ai{jobId}`, {
             method: 'GET',
-            headers: { 
-                'X-API-Key': apiKey,
-                'Authorization': `Bearer ${apiKey}`
-            }
+            headers: { 'X-API-Key': apiKey }
         });
 
         const data = await response.json();
