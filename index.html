@@ -72,22 +72,28 @@
                     const response = await fetch(`/api/job-status/${taskId}`);
                     const data = await response.json();
                     
-                    const currentStatus = data.status || (data.data && data.data.status);
-                    const audioUrl = data.audio_url || data.url || data.output_url || (data.data && data.data.audio_url);
+                    // Apiframe jobs return status uppercase COMPLETED/FAILED or tracks array
+                    const currentStatus = (data.status || "").toUpperCase();
+                    
+                    // Access audio tracks loop properties from the job result safely
+                    let audioUrl = null;
+                    if (data.result && data.result.tracks && data.result.tracks.length > 0) {
+                        audioUrl = data.result.tracks[0].audio_url || data.result.tracks[0].url;
+                    }
 
-                    if (currentStatus === 'completed' || currentStatus === 'SUCCESS' || audioUrl) {
+                    if (currentStatus === 'COMPLETED' || currentStatus === 'SUCCESS' || audioUrl) {
                         clearInterval(interval);
                         if (audioUrl) {
                             playAudio(audioUrl);
                         } else {
-                            document.getElementById('status').innerText = "Processing completed. Loading track stream...";
+                            document.getElementById('status').innerText = "Track compiled. Fetching final download stream...";
                         }
-                    } else if (currentStatus === 'failed' || attempts >= 40) {
+                    } else if (currentStatus === 'FAILED' || attempts >= 40) {
                         clearInterval(interval);
                         document.getElementById('status').innerText = "Generation timeout. Choose a different style.";
                     }
                 } catch (error) {
-                    console.error("Polling mismatch error:", error);
+                    console.error("Polling error:", error);
                 }
             }, 5000);
         }
@@ -95,17 +101,11 @@
         async function triggerTrackGeneration() {
             document.getElementById('status').innerText = "Processing prompt via Gemini middleware...";
             
-            // Explicitly linking frontend selector strings to avoid undefined variables
-            const genreValue = document.getElementById('genreSelect').value;
-            const subGenreValue = document.getElementById('subGenreSelect').value;
-            const isInstrumentalValue = document.getElementById('instrumentalToggle').checked;
-            const youtubeUrlValue = document.getElementById('youtubeInput').value || null;
-
             const payload = {
-                genre: genreValue,
-                subGenre: subGenreValue,
-                isInstrumental: isInstrumentalValue,
-                youtubeUrl: youtubeUrlValue
+                genre: document.getElementById('genreSelect').value,
+                subGenre: document.getElementById('subGenreSelect').value,
+                isInstrumental: document.getElementById('instrumentalToggle').checked,
+                youtubeUrl: document.getElementById('youtubeInput').value || null
             };
 
             try {
@@ -117,9 +117,8 @@
                 
                 const trackJob = await response.json();
                 
-                // Track dynamic structural task variables sent from Apiframe
-                const taskId = trackJob.task_id || trackJob.jobId || trackJob.id || 
-                               (trackJob.data && (trackJob.data.task_id || trackJob.data.id));
+                // Mapped explicitly to read Apiframe's correct native jobId key
+                const taskId = trackJob.jobId || trackJob.id || (trackJob.data && trackJob.data.jobId);
                 
                 if (taskId) {
                     pollJobStatus(taskId);
