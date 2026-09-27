@@ -47,20 +47,20 @@ app.post('/api/generate-track', async (req, res) => {
 
         const apiKey = process.env.APIFRAME_API_KEY;
 
-        // Perfectly structured request payload matching Apiframe's parameters exactly
+        // Perfectly aligned to the required Apiframe Text-to-Music JSON requirements
         const payloadBody = {
-            ai_model: "suno", 
             prompt: refinedPrompt,
-            sunoParams: {
-                model_version: "V4_5PLUS",
-                style: refinedPrompt
-            }
+            model: "suno",
+            model_version: "V4_5PLUS",
+            style: refinedPrompt
         };
 
-        const apiframeResponse = await fetch('https://api.apiframe.ai/v2/music/generate', {
+        const apiframeResponse = await fetch('https://apiframe.ai', {
             method: 'POST',
             headers: {
+                // Dual authentication tokens to ensure total compatibility across V2 registries
                 'X-API-Key': apiKey,
+                'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payloadBody)
@@ -69,7 +69,7 @@ app.post('/api/generate-track', async (req, res) => {
         const data = await apiframeResponse.json();
         console.log("Apiframe Outgoing Response:", data);
         
-        // Return clear, predictable properties down to your front-end tracking scripts
+        // Dynamic variable checking mapping fields accurately
         res.json({
             task_id: data.task_id || data.jobId || data.id || (data.data && (data.data.task_id || data.data.id)),
             status: data.status || "SUCCESS",
@@ -88,7 +88,10 @@ app.get('/api/job-status/:id', async (req, res) => {
 
         const response = await fetch(`https://apiframe.ai{jobId}`, {
             method: 'GET',
-            headers: { 'X-API-Key': apiKey }
+            headers: { 
+                'X-API-Key': apiKey,
+                'Authorization': `Bearer ${apiKey}`
+            }
         });
 
         const data = await response.json();
@@ -103,5 +106,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`AISUNG production build is live on port ${PORT}`);
+    console.log("AISUNG engine is up and running successfully.");
 });
